@@ -1,0 +1,28 @@
+*.class
+*.log
+*.ctxt
+.mtj.tmp/
+
+# Android / Gradle
+*.apk
+*.ap_
+*.dex
+.gradle/
+build/
+local.properties
+.idea/
+*.iml
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Spring Boot / JVM
+target/
+bin/
+*.jar
+*.war
+*.ear
+
+# OS
+.DS_Store
+Thumbs.db
