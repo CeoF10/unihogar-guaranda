@@ -29,13 +29,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 @Composable
 fun LoginScreen(
     viewModel: LoginViewModel = viewModel(),
-    onLoginSuccess: (UserRole) -> Unit = {}
+    onLoginSuccess: (UserRole, String) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
 
     if (uiState.isSuccess) {
-        onLoginSuccess(uiState.role)
+        onLoginSuccess(uiState.role, uiState.email)
     }
 
     Box(

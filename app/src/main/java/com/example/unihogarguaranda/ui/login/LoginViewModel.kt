@@ -11,9 +11,7 @@ import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
-        LoginUiState(email = "neicer.jimenez@ueb.edu.ec")
-    )
+    private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun onEmailChanged(email: String) {
@@ -25,17 +23,16 @@ class LoginViewModel : ViewModel() {
     }
 
     fun onRoleChanged(role: UserRole) {
-        val defaultEmail = when (role) {
-            UserRole.ESTUDIANTE -> "neicer.jimenez@ueb.edu.ec"
-            UserRole.PROPIETARIO -> "neycerjimenezf10@gmail.com"
-        }
         _uiState.update { 
             it.copy(
                 role = role, 
-                email = defaultEmail,
                 errorMessage = null 
             ) 
         }
+    }
+
+    fun resetState() {
+        _uiState.update { LoginUiState() }
     }
 
     fun togglePasswordVisibility() {
@@ -45,15 +42,22 @@ class LoginViewModel : ViewModel() {
     fun login() {
         val currentState = _uiState.value
 
-        // Validación según la propuesta técnica (RF01 / RF02)
         if (currentState.email.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Ingrese su correo electrónico.") }
             return
         }
 
-        if (currentState.role == UserRole.ESTUDIANTE && !currentState.email.endsWith("@ueb.edu.ec", ignoreCase = true)) {
-            _uiState.update { it.copy(errorMessage = "El rol de estudiante requiere correo institucional (@ueb.edu.ec).") }
-            return
+        // Validación funcional según credenciales registradas
+        if (currentState.role == UserRole.ESTUDIANTE) {
+            if (!currentState.email.equals("neicer.jimenez@ueb.edu.ec", ignoreCase = true)) {
+                _uiState.update { it.copy(errorMessage = "Correo no registrado o no institucional. Usa: neicer.jimenez@ueb.edu.ec") }
+                return
+            }
+        } else if (currentState.role == UserRole.PROPIETARIO) {
+            if (!currentState.email.equals("neycerjimenezf10@gmail.com", ignoreCase = true)) {
+                _uiState.update { it.copy(errorMessage = "Correo de propietario no registrado. Usa: neycerjimenezf10@gmail.com") }
+                return
+            }
         }
 
         if (currentState.password.length < 6) {
@@ -64,8 +68,7 @@ class LoginViewModel : ViewModel() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
         viewModelScope.launch {
-            // Simulación de autenticación (posteriormente conectada a Spring Boot / JWT)
-            delay(1200)
+            delay(800)
             _uiState.update { it.copy(isLoading = false, isSuccess = true) }
         }
     }

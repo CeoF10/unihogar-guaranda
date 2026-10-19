@@ -1,15 +1,20 @@
 package com.example.unihogarguaranda
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unihogarguaranda.ui.home.OwnerHomeScreen
+import com.example.unihogarguaranda.ui.home.StudentHomeScreen
 import com.example.unihogarguaranda.ui.login.LoginScreen
+import com.example.unihogarguaranda.ui.login.LoginViewModel
+import com.example.unihogarguaranda.ui.login.UserRole
 import com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme
 
 class MainActivity : ComponentActivity() {
@@ -22,15 +27,39 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    LoginScreen(
-                        onLoginSuccess = { role ->
-                            Toast.makeText(
-                                this,
-                                "Bienvenido como ${role.label}",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                    var loggedInUser by remember { mutableStateOf<Pair<UserRole, String>?>(null) }
+                    val loginViewModel: LoginViewModel = viewModel()
+
+                    if (loggedInUser == null) {
+                        LoginScreen(
+                            viewModel = loginViewModel,
+                            onLoginSuccess = { role, email ->
+                                loggedInUser = Pair(role, email)
+                            }
+                        )
+                    } else {
+                        val (role, email) = loggedInUser!!
+                        when (role) {
+                            UserRole.ESTUDIANTE -> {
+                                StudentHomeScreen(
+                                    studentEmail = email,
+                                    onLogout = {
+                                        loginViewModel.resetState()
+                                        loggedInUser = null
+                                    }
+                                )
+                            }
+                            UserRole.PROPIETARIO -> {
+                                OwnerHomeScreen(
+                                    ownerEmail = email,
+                                    onLogout = {
+                                        loginViewModel.resetState()
+                                        loggedInUser = null
+                                    }
+                                )
+                            }
                         }
-                    )
+                    }
                 }
             }
         }
