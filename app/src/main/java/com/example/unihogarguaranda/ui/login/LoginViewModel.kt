@@ -11,7 +11,9 @@ import kotlinx.coroutines.launch
 
 class LoginViewModel : ViewModel() {
 
-    private val _uiState = MutableStateFlow(LoginUiState())
+    private val _uiState = MutableStateFlow(
+        LoginUiState(email = "neicer.jimenez@ueb.edu.ec")
+    )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun onEmailChanged(email: String) {
@@ -23,7 +25,17 @@ class LoginViewModel : ViewModel() {
     }
 
     fun onRoleChanged(role: UserRole) {
-        _uiState.update { it.copy(role = role, errorMessage = null) }
+        val defaultEmail = when (role) {
+            UserRole.ESTUDIANTE -> "neicer.jimenez@ueb.edu.ec"
+            UserRole.PROPIETARIO -> "neycerjimenezf10@gmail.com"
+        }
+        _uiState.update { 
+            it.copy(
+                role = role, 
+                email = defaultEmail,
+                errorMessage = null 
+            ) 
+        }
     }
 
     fun togglePasswordVisibility() {
