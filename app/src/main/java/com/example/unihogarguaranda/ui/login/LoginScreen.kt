@@ -203,3 +203,11 @@ fun LoginScreen(
         }
     }
 }
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun LoginScreenPreview() {
+    com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme {
+        LoginScreen()
+    }
+}
