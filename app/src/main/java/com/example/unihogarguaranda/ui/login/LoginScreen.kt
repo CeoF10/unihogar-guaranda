@@ -1,6 +1,8 @@
 package com.example.unihogarguaranda.ui.login
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -25,6 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unihogarguaranda.R
+import com.example.unihogarguaranda.ui.theme.*
 
 @Composable
 fun LoginScreen(
@@ -41,8 +46,8 @@ fun LoginScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
+            .background(BackgroundLight)
+            .padding(horizontal = 24.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -52,81 +57,122 @@ fun LoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Cabecera institucional
-            Text(
-                text = "UniHogar Guaranda",
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Logo oficial UniHogar
+            Image(
+                painter = painterResource(id = R.drawable.app_logo),
+                contentDescription = "Logo UniHogar",
+                modifier = Modifier
+                    .size(110.dp)
+                    .clip(RoundedCornerShape(26.dp))
             )
 
-            Text(
-                text = "Arriendos y residencias para la comunidad UEB",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
+            // Titular y lema
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Uni",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        color = BlueUEB
+                    )
+                    Text(
+                        text = "Hogar",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        color = RedUEB
+                    )
+                }
+                Text(
+                    text = "Guaranda",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = BlueUEB,
+                    letterSpacing = 2.sp
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = "Tu espacio cerca de la UEB",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center
+                )
+            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Selector de Rol (Segmented Buttons / Card)
-            Card(
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            // Selector Estudiante / Propietario con estilo moderno
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Color.White,
+                shadowElevation = 2.dp
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp),
+                    modifier = Modifier.padding(6.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     UserRole.values().forEach { role ->
                         val isSelected = uiState.role == role
-                        Button(
-                            onClick = { viewModel.onRoleChanged(role) },
+                        Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(8.dp)),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = if (isSelected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                                contentColor = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
-                            ),
-                            elevation = null
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(if (isSelected) RedUEB else Color.Transparent)
+                                .clickable { viewModel.onRoleChanged(role) }
+                                .padding(vertical = 10.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Text(text = role.label, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                            Text(
+                                text = role.label,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else TextPrimary
+                            )
                         }
                     }
                 }
             }
 
-            // Indicador de correo según rol
             val helperText = if (uiState.role == UserRole.ESTUDIANTE) {
-                "Ingresa con tu correo institucional (@ueb.edu.ec)"
+                "Acceso institucional (@ueb.edu.ec)"
             } else {
-                "Ingresa con tu correo personal"
+                "Acceso para propietarios de inmuebles"
             }
 
             Text(
                 text = helperText,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.outline
+                color = BlueUEB,
+                fontWeight = FontWeight.Medium
             )
 
-            // Campo Correo
+            // Input Correo
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChanged(it) },
-                label = { Text("Correo Electrónico") },
+                label = { Text("Correo electrónico") },
+                placeholder = { 
+                    Text(if (uiState.role == UserRole.ESTUDIANTE) "ej. neicer.jimenez@ueb.edu.ec" else "ej. neycerjimenezf10@gmail.com") 
+                },
                 singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BlueUEB,
+                    unfocusedBorderColor = DividerColor,
+                    focusedLabelColor = BlueUEB,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                ),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Email,
                     imeAction = ImeAction.Next
                 ),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp)
             )
 
-            // Campo Contraseña
+            // Input Contraseña
             OutlinedTextField(
                 value = uiState.password,
                 onValueChange = { viewModel.onPasswordChanged(it) },
@@ -137,10 +183,19 @@ fun LoginScreen(
                     TextButton(onClick = { viewModel.togglePasswordVisibility() }) {
                         Text(
                             text = if (uiState.isPasswordVisible) "Ocultar" else "Ver",
-                            style = MaterialTheme.typography.labelSmall
+                            color = BlueUEB,
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp
                         )
                     }
                 },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = BlueUEB,
+                    unfocusedBorderColor = DividerColor,
+                    focusedLabelColor = BlueUEB,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
+                ),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
                     imeAction = ImeAction.Done
@@ -152,22 +207,22 @@ fun LoginScreen(
                     }
                 ),
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(14.dp)
             )
 
             // Mensaje de Error
             uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
-                    color = MaterialTheme.colorScheme.error,
+                    color = RedUEB,
                     style = MaterialTheme.typography.bodySmall,
                     textAlign = TextAlign.Center
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
-            // Botón de Inicio de Sesión
+            // Botón principal de acción en Rojo UEB (#B22234)
             Button(
                 onClick = {
                     focusManager.clearFocus()
@@ -176,38 +231,40 @@ fun LoginScreen(
                 enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(12.dp)
+                    .height(52.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = RedUEB,
+                    contentColor = Color.White
+                )
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = Color.White,
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text(text = "Iniciar Sesión", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = "Comenzar",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
 
-            // Pie de pantalla
             TextButton(
-                onClick = { /* Navegación a recuperar contraseña */ }
+                onClick = { /* Olvidaste contraseña */ }
             ) {
                 Text(
                     text = "¿Olvidaste tu contraseña?",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    fontSize = 13.sp,
+                    color = BlueUEB,
+                    fontWeight = FontWeight.Medium
                 )
             }
-        }
-    }
-}
 
-@androidx.compose.ui.tooling.preview.Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun LoginScreenPreview() {
-    com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme {
-        LoginScreen()
+            Spacer(modifier = Modifier.height(20.dp))
+        }
     }
 }
