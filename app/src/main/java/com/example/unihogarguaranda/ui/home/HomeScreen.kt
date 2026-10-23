@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -49,8 +50,8 @@ fun StudentHomeScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
 
-    // Lista mutable de propiedades con estado compartido
-    var propertyList by remember { mutableStateOf(MockData.initialProperties) }
+    // Lista de propiedades (vacia para la entrega actual del panel de login e interfaz base)
+    var propertyList by remember { mutableStateOf(emptyList<Property>()) }
 
     // Si está viendo el detalle de una vivienda
     if (selectedPropertyDetail != null) {
@@ -91,12 +92,10 @@ fun StudentHomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { 
-                        Toast.makeText(context, "No tienes notificaciones pendientes", Toast.LENGTH_SHORT).show()
-                    }) {
+                    IconButton(onClick = onLogout) {
                         Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notificaciones",
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Cerrar sesión",
                             tint = RedUEB
                         )
                     }
@@ -327,7 +326,7 @@ fun StudentCatalogContent(
             }
         }
 
-        // Sección Recomendados para ti
+        // Sección Inmuebles en Guaranda
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -335,18 +334,66 @@ fun StudentCatalogContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recomendados para ti",
+                    text = "Inmuebles en Guaranda",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
                 Text(
-                    text = "Ver todos ›",
+                    text = "${properties.size} disponibles",
                     fontSize = 13.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = BlueUEB,
-                    modifier = Modifier.clickable { onFilterClick() }
+                    color = TextSecondary
                 )
+            }
+        }
+
+        if (properties.isEmpty()) {
+            item {
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = BackgroundLight,
+                            modifier = Modifier.size(56.dp)
+                        ) {
+                            Box(contentAlignment = Alignment.Center) {
+                                Icon(
+                                    imageVector = Icons.Default.Search,
+                                    contentDescription = null,
+                                    tint = TextSecondary,
+                                    modifier = Modifier.size(28.dp)
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(14.dp))
+                        Text(
+                            text = "No hay inmuebles publicados aún",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            color = TextPrimary
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = "El catálogo de alojamientos se habilitará en las siguientes entregas cuando los propietarios publiquen sus ofertas.",
+                            fontSize = 13.sp,
+                            color = TextSecondary,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
             }
         }
 
@@ -628,6 +675,15 @@ fun OwnerHomeScreen(
                         Text("Propietario", fontSize = 13.sp, color = TextSecondary)
                     }
                 },
+                actions = {
+                    IconButton(onClick = onLogout) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                            contentDescription = "Cerrar sesión",
+                            tint = RedUEB
+                        )
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
@@ -685,7 +741,7 @@ fun OwnerHomeScreen(
                         Column(modifier = Modifier.padding(18.dp)) {
                             Text("Panel de Arrendador", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text("1 inmueble publicado · 2 solicitudes de visita pendientes", color = Color(0xFFD1D5DB), fontSize = 13.sp)
+                            Text("0 inmuebles publicados · 0 solicitudes pendientes", color = Color(0xFFD1D5DB), fontSize = 13.sp)
                         }
                     }
                 }
@@ -698,55 +754,44 @@ fun OwnerHomeScreen(
                     Card(
                         shape = RoundedCornerShape(16.dp),
                         colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = BackgroundLight,
+                                modifier = Modifier.size(56.dp)
                             ) {
-                                Text("Mini Dpto. Los Chasquis", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = TextPrimary)
-                                Surface(
-                                    shape = RoundedCornerShape(6.dp),
-                                    color = Color(0xFF10B981)
-                                ) {
-                                    Text(
-                                        "DISPONIBLE",
-                                        color = Color.White,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        imageVector = Icons.Default.Apartment,
+                                        contentDescription = null,
+                                        tint = TextSecondary,
+                                        modifier = Modifier.size(28.dp)
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text("Canon: $150/mes • Depósito: $100", fontSize = 13.sp, color = BlueUEB)
-                            Text("Cerca de la UEB · Guaranda", fontSize = 12.sp, color = TextSecondary)
-
                             Spacer(modifier = Modifier.height(14.dp))
-                            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                Button(
-                                    onClick = { 
-                                        Toast.makeText(context, "Editar anuncio", Toast.LENGTH_SHORT).show()
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    colors = ButtonDefaults.buttonColors(containerColor = BlueUEB),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Text("Editar")
-                                }
-                                OutlinedButton(
-                                    onClick = { 
-                                        Toast.makeText(context, "Estado pausado", Toast.LENGTH_SHORT).show()
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(10.dp)
-                                ) {
-                                    Text("Pausar")
-                                }
-                            }
+                            Text(
+                                text = "Aún no tienes inmuebles publicados",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = "La publicación y gestión de inmuebles estará activa en la siguiente fase del proyecto.",
+                                fontSize = 13.sp,
+                                color = TextSecondary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                lineHeight = 18.sp
+                            )
                         }
                     }
                 }
