@@ -9,8 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -270,7 +269,12 @@ fun PropertyDetailScreen(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("🛏️", fontSize = 64.sp)
+                    Icon(
+                        imageVector = Icons.Default.Hotel,
+                        contentDescription = null,
+                        tint = BlueUEB,
+                        modifier = Modifier.size(64.dp)
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         "Galería de Fotos (${property.photoCount} imágenes)",
@@ -363,7 +367,12 @@ fun PropertyDetailScreen(
                     }
                     Spacer(modifier = Modifier.height(6.dp))
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("📍", fontSize = 13.sp)
+                        Icon(
+                            imageVector = Icons.Default.LocationOn,
+                            contentDescription = null,
+                            tint = RedUEB,
+                            modifier = Modifier.size(15.dp)
+                        )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = "${property.location} (${property.campusDistance} del campus)",
@@ -381,19 +390,40 @@ fun PropertyDetailScreen(
                     AssistChip(
                         onClick = { },
                         label = { Text("${property.beds} hab.", fontSize = 12.sp) },
-                        leadingIcon = { Text("🛏️", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.SingleBed,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = BlueUEB
+                            )
+                        },
                         shape = RoundedCornerShape(12.dp)
                     )
                     AssistChip(
                         onClick = { },
                         label = { Text(property.baths, fontSize = 12.sp) },
-                        leadingIcon = { Text("🚿", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Bathtub,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = BlueUEB
+                            )
+                        },
                         shape = RoundedCornerShape(12.dp)
                     )
                     AssistChip(
                         onClick = { },
                         label = { Text("WiFi", fontSize = 12.sp) },
-                        leadingIcon = { Text("📶", fontSize = 12.sp) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Wifi,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = BlueUEB
+                            )
+                        },
                         shape = RoundedCornerShape(12.dp)
                     )
                 }
@@ -442,7 +472,12 @@ fun PropertyDetailScreen(
                                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text("✓", color = RedUEB, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                                        Icon(
+                                            imageVector = Icons.Default.Check,
+                                            contentDescription = null,
+                                            tint = RedUEB,
+                                            modifier = Modifier.size(15.dp)
+                                        )
                                         Spacer(modifier = Modifier.width(6.dp))
                                         Text(service, fontSize = 13.sp, color = TextPrimary)
                                     }

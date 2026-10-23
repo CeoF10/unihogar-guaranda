@@ -8,7 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -20,14 +20,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unihogarguaranda.ui.theme.*
 
-data class ProfileOption(val icon: String, val title: String)
+data class ProfileOption(val icon: androidx.compose.ui.graphics.vector.ImageVector, val title: String)
 
 val studentOptions = listOf(
-    ProfileOption("📝", "Mis publicaciones"),
-    ProfileOption("❤️", "Mis favoritos"),
-    ProfileOption("💬", "Mensajes"),
-    ProfileOption("⚙️", "Configuración"),
-    ProfileOption("❓", "Ayuda")
+    ProfileOption(Icons.Default.Article, "Mis publicaciones"),
+    ProfileOption(Icons.Default.Favorite, "Mis favoritos"),
+    ProfileOption(Icons.Default.ChatBubbleOutline, "Mensajes"),
+    ProfileOption(Icons.Default.Settings, "Configuración"),
+    ProfileOption(Icons.Default.HelpOutline, "Ayuda")
 )
 
 @Composable
@@ -54,7 +54,12 @@ fun FullProfileScreen(
                     .background(BlueUEB),
                 contentAlignment = Alignment.Center
             ) {
-                Text("👤", fontSize = 38.sp)
+                Icon(
+                    imageVector = Icons.Default.Person,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(44.dp)
+                )
             }
             Spacer(modifier = Modifier.height(10.dp))
             Text(
@@ -84,14 +89,24 @@ fun FullProfileScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("🎓", fontSize = 24.sp)
+                        Icon(
+                            imageVector = Icons.Default.School,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(26.dp)
+                        )
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
                             Text("Rol activo", color = Color.White.copy(alpha = 0.7f), fontSize = 11.sp)
                             Text(roleTitle, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                         }
                     }
-                    Text("›", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
             }
         }
@@ -112,7 +127,12 @@ fun FullProfileScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(option.icon, fontSize = 18.sp)
+                        Icon(
+                            imageVector = option.icon,
+                            contentDescription = option.title,
+                            tint = BlueUEB,
+                            modifier = Modifier.size(20.dp)
+                        )
                         Spacer(modifier = Modifier.width(14.dp))
                         Text(
                             text = option.title,
