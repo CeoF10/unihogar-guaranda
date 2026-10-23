@@ -4,22 +4,20 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -71,130 +69,108 @@ fun LoginSuccessScreen(
     email: String,
     onLogout: () -> Unit
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(BackgroundLight)
-            .padding(24.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-        ) {
-            Column(
+    Scaffold(
+        topBar = {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .background(Color.White)
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Image(
-                    painter = painterResource(id = R.drawable.app_logo),
-                    contentDescription = "Logo UniHogar",
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Uni",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        color = BlueUEB
+                    )
+                    Text(
+                        text = "Hogar",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Black,
+                        color = RedUEB
+                    )
+                }
+
+                IconButton(onClick = onLogout) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Cerrar sesión",
+                        tint = RedUEB
+                    )
+                }
+            }
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(BackgroundLight)
+                .padding(innerPadding)
+                .padding(24.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Box(
                     modifier = Modifier
-                        .size(80.dp)
-                        .clip(RoundedCornerShape(20.dp))
-                )
+                        .size(72.dp)
+                        .clip(CircleShape)
+                        .background(BlueUEB),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(38.dp)
+                    )
+                }
 
                 Text(
-                    text = "Acceso Correcto",
+                    text = "Bienvenido",
                     fontSize = 22.sp,
                     fontWeight = FontWeight.Bold,
-                    color = BlueUEB,
-                    textAlign = TextAlign.Center
+                    color = TextPrimary
                 )
 
                 Text(
-                    text = "Panel de autenticacion verificado exitosamente.",
-                    fontSize = 13.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
+                    text = email,
+                    fontSize = 14.sp,
+                    color = TextSecondary
                 )
 
                 Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = BackgroundLight,
-                    modifier = Modifier.fillMaxWidth()
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (userRole == UserRole.ESTUDIANTE) BlueUEB.copy(alpha = 0.1f) else RedUEB.copy(alpha = 0.1f)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = if (userRole == UserRole.ESTUDIANTE) Icons.Default.School else Icons.Default.Home,
-                                contentDescription = null,
-                                tint = BlueUEB,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text("Rol asignado", fontSize = 11.sp, color = TextSecondary)
-                                Text(userRole.label, fontSize = 14.sp, fontWeight = FontWeight.Bold, color = TextPrimary)
-                            }
-                        }
-
-                        HorizontalDivider(color = DividerColor)
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Email,
-                                contentDescription = null,
-                                tint = BlueUEB,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Column {
-                                Text("Correo registrado", fontSize = 11.sp, color = TextSecondary)
-                                Text(email, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = TextPrimary)
-                            }
-                        }
-
-                        HorizontalDivider(color = DividerColor)
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = Color(0xFF10B981),
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(
-                                text = "Sesion activa y validada",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color(0xFF10B981)
-                            )
-                        }
-                    }
+                    Text(
+                        text = userRole.label,
+                        color = if (userRole == UserRole.ESTUDIANTE) BlueUEB else RedUEB,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                    )
                 }
 
-                Button(
+                Spacer(modifier = Modifier.height(20.dp))
+
+                OutlinedButton(
                     onClick = onLogout,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(48.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = RedUEB,
-                        contentColor = Color.White
-                    )
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = RedUEB)
                 ) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ExitToApp,
                         contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Cerrar sesion",
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp
-                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Cerrar sesión", fontSize = 14.sp)
                 }
             }
         }
