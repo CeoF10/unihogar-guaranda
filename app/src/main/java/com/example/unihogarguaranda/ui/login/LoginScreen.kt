@@ -18,9 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -100,45 +98,19 @@ fun LoginScreen(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(BackgroundLight)
+            .padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center
     ) {
-        // Imagen de fondo (Campus UEB)
-        Image(
-            painter = painterResource(id = R.drawable.bg_login),
-            contentDescription = null,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-        )
-
-        // Overlay equilibrado con degradado suave
-        Box(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color.White.copy(alpha = 0.35f),
-                            Color.White.copy(alpha = 0.50f),
-                            Color.White.copy(alpha = 0.68f)
-                        )
-                    )
-                )
-        )
-
-        // Contenedor scrolleable del formulario
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxWidth()
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
             Spacer(modifier = Modifier.height(16.dp))
 
             // Logo oficial UniHogar
@@ -150,45 +122,36 @@ fun LoginScreen(
                     .clip(RoundedCornerShape(24.dp))
             )
 
-            // Titular y lema con contenedor para asegurar contraste sobre la fotografia
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = Color.White.copy(alpha = 0.88f),
-                shadowElevation = 1.dp
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = "Uni",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Black,
-                            color = BlueUEB
-                        )
-                        Text(
-                            text = "Hogar",
-                            fontSize = 28.sp,
-                            fontWeight = FontWeight.Black,
-                            color = RedUEB
-                        )
-                    }
+            // Titular y lema
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Guaranda",
-                        fontSize = 15.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = BlueUEB,
-                        letterSpacing = 2.sp
+                        text = "Uni",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        color = BlueUEB
                     )
-                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = if (uiState.isRegisterMode) "Registro de nueva cuenta" else "Tu espacio cerca de la UEB",
-                        fontSize = 13.sp,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
+                        text = "Hogar",
+                        fontSize = 28.sp,
+                        fontWeight = FontWeight.Black,
+                        color = RedUEB
                     )
                 }
+                Text(
+                    text = "Guaranda",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = BlueUEB,
+                    letterSpacing = 2.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (uiState.isRegisterMode) "Registro de nueva cuenta" else "Tu espacio cerca de la UEB",
+                    fontSize = 14.sp,
+                    color = TextSecondary,
+                    textAlign = TextAlign.Center
+                )
             }
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -551,43 +514,31 @@ fun LoginScreen(
 
             // Enlace Olvidaste tu contraseña (solo en modo Login)
             if (!uiState.isRegisterMode) {
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = Color.White.copy(alpha = 0.85f)
+                TextButton(
+                    onClick = { viewModel.openForgotPasswordDialog() }
                 ) {
-                    TextButton(
-                        onClick = { viewModel.openForgotPasswordDialog() }
-                    ) {
-                        Text(
-                            text = "¿Olvidaste tu contraseña?",
-                            fontSize = 13.sp,
-                            color = BlueUEB,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
+                    Text(
+                        text = "¿Olvidaste tu contraseña?",
+                        fontSize = 13.sp,
+                        color = BlueUEB,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
             }
 
             // Enlace de alternar abajo: Registrarse / Iniciar sesión
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color.White.copy(alpha = 0.85f)
+            TextButton(
+                onClick = { viewModel.toggleAuthMode() }
             ) {
-                TextButton(
-                    onClick = { viewModel.toggleAuthMode() }
-                ) {
-                    Text(
-                        text = if (uiState.isRegisterMode) "¿Ya tienes una cuenta? Inicia sesión" else "¿No tienes una cuenta? Regístrate",
-                        fontSize = 13.sp,
-                        color = TextPrimary,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                }
+                Text(
+                    text = if (uiState.isRegisterMode) "¿Ya tienes una cuenta? Inicia sesión" else "¿No tienes una cuenta? Regístrate",
+                    fontSize = 13.sp,
+                    color = TextPrimary,
+                    fontWeight = FontWeight.SemiBold
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
         }
     }
-}
 }
