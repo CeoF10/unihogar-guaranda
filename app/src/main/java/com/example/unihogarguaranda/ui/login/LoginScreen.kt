@@ -10,10 +10,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -150,7 +147,7 @@ fun LoginScreen(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (uiState.isRegisterMode) "Crear nueva cuenta" else "Tu espacio cerca de la UEB",
+                    text = if (uiState.isRegisterMode) "Registro de nueva cuenta" else "Tu espacio cerca de la UEB",
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center
@@ -193,9 +190,9 @@ fun LoginScreen(
             }
 
             val helperText = if (uiState.role == UserRole.ESTUDIANTE) {
-                "Acceso institucional (@ueb.edu.ec)"
+                if (uiState.isRegisterMode) "Registro estudiantil con correo @ueb.edu.ec" else "Acceso institucional (@ueb.edu.ec)"
             } else {
-                "Acceso para propietarios de inmuebles"
+                if (uiState.isRegisterMode) "Registro de arrendador con validacion de identidad" else "Acceso para propietarios de inmuebles"
             }
 
             Text(
@@ -205,7 +202,7 @@ fun LoginScreen(
                 fontWeight = FontWeight.Medium
             )
 
-            // Campos de Registro (solo en modo registro)
+            // Campos de Registro
             if (uiState.isRegisterMode) {
                 OutlinedTextField(
                     value = uiState.name,
@@ -231,10 +228,63 @@ fun LoginScreen(
                     shape = RoundedCornerShape(14.dp)
                 )
 
+                // Requisitos adicionales si es PROPIETARIO
+                if (uiState.role == UserRole.PROPIETARIO) {
+                    OutlinedTextField(
+                        value = uiState.identificationNumber,
+                        onValueChange = { viewModel.onIdentificationChanged(it) },
+                        label = { Text("Cedula de identidad (10 digitos)") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.CreditCard,
+                                contentDescription = null,
+                                tint = BlueUEB,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BlueUEB,
+                            unfocusedBorderColor = DividerColor,
+                            focusedLabelColor = BlueUEB,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = uiState.ownerAddress,
+                        onValueChange = { viewModel.onOwnerAddressChanged(it) },
+                        label = { Text("Direccion / Sector en Guaranda") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = BlueUEB,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        },
+                        placeholder = { Text("ej. Calle Sucre y 10 de Agosto") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = BlueUEB,
+                            unfocusedBorderColor = DividerColor,
+                            focusedLabelColor = BlueUEB,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp)
+                    )
+                }
+
                 OutlinedTextField(
                     value = uiState.phone,
                     onValueChange = { viewModel.onPhoneChanged(it) },
-                    label = { Text("Teléfono / Celular") },
+                    label = { Text("Telefono / Celular de contacto") },
                     leadingIcon = {
                         Icon(
                             imageVector = Icons.Default.Phone,
@@ -261,7 +311,7 @@ fun LoginScreen(
             OutlinedTextField(
                 value = uiState.email,
                 onValueChange = { viewModel.onEmailChanged(it) },
-                label = { Text("Correo electrónico") },
+                label = { Text(if (uiState.role == UserRole.ESTUDIANTE) "Correo institucional UEB" else "Correo personal de contacto") },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Default.Email,
@@ -371,6 +421,36 @@ fun LoginScreen(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp)
                 )
+
+                // Declaración de Legitimidad de Arriendo para PROPIETARIO
+                if (uiState.role == UserRole.PROPIETARIO) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color(0xFFFEF3C7),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { viewModel.onOwnershipDeclaredChanged(!uiState.isOwnershipDeclared) }
+                                .padding(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Checkbox(
+                                checked = uiState.isOwnershipDeclared,
+                                onCheckedChange = { viewModel.onOwnershipDeclaredChanged(it) },
+                                colors = CheckboxDefaults.colors(checkedColor = RedUEB)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "Declaro ser propietario o apoderado legal facultado para arrendar inmuebles a estudiantes en Guaranda.",
+                                fontSize = 12.sp,
+                                color = Color(0xFF92400E),
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
+                }
             }
 
             // Mensajes de Éxito o Error

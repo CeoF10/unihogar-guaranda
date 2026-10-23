@@ -36,6 +36,19 @@ class LoginViewModel : ViewModel() {
         _uiState.update { it.copy(phone = phone, errorMessage = null) }
     }
 
+    fun onIdentificationChanged(id: String) {
+        val filtered = id.filter { it.isDigit() }.take(10)
+        _uiState.update { it.copy(identificationNumber = filtered, errorMessage = null) }
+    }
+
+    fun onOwnerAddressChanged(address: String) {
+        _uiState.update { it.copy(ownerAddress = address, errorMessage = null) }
+    }
+
+    fun onOwnershipDeclaredChanged(declared: Boolean) {
+        _uiState.update { it.copy(isOwnershipDeclared = declared, errorMessage = null) }
+    }
+
     fun onRoleChanged(role: UserRole) {
         val suggestedEmail = if (role == UserRole.ESTUDIANTE) {
             "neicer.jimenez@ueb.edu.ec"
@@ -158,6 +171,30 @@ class LoginViewModel : ViewModel() {
             return
         }
 
+        // Validaciones específicas para el Propietario (demostrar legitimidad y datos adicionales)
+        if (currentState.role == UserRole.PROPIETARIO) {
+            if (currentState.identificationNumber.length != 10) {
+                _uiState.update { 
+                    it.copy(errorMessage = "La cédula de identidad debe tener exactamente 10 dígitos.") 
+                }
+                return
+            }
+
+            if (currentState.ownerAddress.isBlank()) {
+                _uiState.update { 
+                    it.copy(errorMessage = "Ingrese su dirección o sector de residencia en Guaranda.") 
+                }
+                return
+            }
+
+            if (!currentState.isOwnershipDeclared) {
+                _uiState.update { 
+                    it.copy(errorMessage = "Debe certificar la legitimidad para arrendar inmuebles.") 
+                }
+                return
+            }
+        }
+
         if (currentState.email.isBlank()) {
             _uiState.update { it.copy(errorMessage = "Ingrese su correo electrónico.") }
             return
@@ -173,7 +210,7 @@ class LoginViewModel : ViewModel() {
         }
 
         if (currentState.phone.length < 9) {
-            _uiState.update { it.copy(errorMessage = "Ingrese un número de teléfono válido.") }
+            _uiState.update { it.copy(errorMessage = "Ingrese un número de teléfono o celular válido.") }
             return
         }
 
@@ -195,7 +232,11 @@ class LoginViewModel : ViewModel() {
                 it.copy(
                     isLoading = false,
                     isRegisterMode = false,
-                    successMessage = "Cuenta registrada. Se ha enviado el enlace de verificación al correo. Ya puede iniciar sesión."
+                    successMessage = if (currentState.role == UserRole.PROPIETARIO) {
+                        "Solicitud de arrendador registrada. Se verificaran los datos y se ha enviado un enlace de confirmacion a su correo personal."
+                    } else {
+                        "Cuenta estudiantil registrada. Se ha enviado un enlace de verificacion a su correo institucional."
+                    }
                 ) 
             }
         }
