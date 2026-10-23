@@ -12,6 +12,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -110,17 +112,17 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Logo oficial UniHogar
             Image(
                 painter = painterResource(id = R.drawable.app_logo),
                 contentDescription = "Logo UniHogar",
                 modifier = Modifier
-                    .size(110.dp)
-                    .clip(RoundedCornerShape(26.dp))
+                    .size(95.dp)
+                    .clip(RoundedCornerShape(24.dp))
             )
 
             // Titular y lema
@@ -146,16 +148,16 @@ fun LoginScreen(
                     color = BlueUEB,
                     letterSpacing = 2.sp
                 )
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Tu espacio cerca de la UEB",
+                    text = if (uiState.isRegisterMode) "Crear nueva cuenta" else "Tu espacio cerca de la UEB",
                     fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
             // Selector de Rol: Estudiante / Propietario
             Surface(
@@ -165,7 +167,7 @@ fun LoginScreen(
                 shadowElevation = 2.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(6.dp),
+                    modifier = Modifier.padding(5.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     UserRole.values().forEach { role ->
@@ -202,6 +204,58 @@ fun LoginScreen(
                 color = BlueUEB,
                 fontWeight = FontWeight.Medium
             )
+
+            // Campos de Registro (solo en modo registro)
+            if (uiState.isRegisterMode) {
+                OutlinedTextField(
+                    value = uiState.name,
+                    onValueChange = { viewModel.onNameChanged(it) },
+                    label = { Text("Nombre completo") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = BlueUEB,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BlueUEB,
+                        unfocusedBorderColor = DividerColor,
+                        focusedLabelColor = BlueUEB,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                )
+
+                OutlinedTextField(
+                    value = uiState.phone,
+                    onValueChange = { viewModel.onPhoneChanged(it) },
+                    label = { Text("Teléfono / Celular") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Phone,
+                            contentDescription = null,
+                            tint = BlueUEB,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BlueUEB,
+                        unfocusedBorderColor = DividerColor,
+                        focusedLabelColor = BlueUEB,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                )
+            }
 
             // Input Correo
             OutlinedTextField(
@@ -269,19 +323,73 @@ fun LoginScreen(
                 ),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = ImeAction.Done
+                    imeAction = if (uiState.isRegisterMode) ImeAction.Next else ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        viewModel.login()
+                        viewModel.submit()
                     }
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp)
             )
 
-            // Mensajes de Error
+            // Input Confirmar Contraseña (si es Registro)
+            if (uiState.isRegisterMode) {
+                OutlinedTextField(
+                    value = uiState.confirmPassword,
+                    onValueChange = { viewModel.onConfirmPasswordChanged(it) },
+                    label = { Text("Confirmar contraseña") },
+                    leadingIcon = {
+                        Icon(
+                            imageVector = Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = BlueUEB,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = BlueUEB,
+                        unfocusedBorderColor = DividerColor,
+                        focusedLabelColor = BlueUEB,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    ),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = ImeAction.Done
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            focusManager.clearFocus()
+                            viewModel.submit()
+                        }
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp)
+                )
+            }
+
+            // Mensajes de Éxito o Error
+            uiState.successMessage?.let { msg ->
+                Surface(
+                    shape = RoundedCornerShape(10.dp),
+                    color = Color(0xFFD1FAE5),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = msg,
+                        color = Color(0xFF065F46),
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(10.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+
             uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -291,13 +399,13 @@ fun LoginScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(2.dp))
 
-            // Botón Principal de Acción "Comenzar"
+            // Botón Principal de Acción "Comenzar" / "Crear cuenta"
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    viewModel.login()
+                    viewModel.submit()
                 },
                 enabled = !uiState.isLoading,
                 modifier = Modifier
@@ -317,26 +425,40 @@ fun LoginScreen(
                     )
                 } else {
                     Text(
-                        text = "Comenzar",
+                        text = if (uiState.isRegisterMode) "Crear cuenta" else "Comenzar",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            // Enlace Olvidaste tu contraseña
+            // Enlace Olvidaste tu contraseña (solo en modo Login)
+            if (!uiState.isRegisterMode) {
+                TextButton(
+                    onClick = { viewModel.openForgotPasswordDialog() }
+                ) {
+                    Text(
+                        text = "¿Olvidaste tu contraseña?",
+                        fontSize = 13.sp,
+                        color = BlueUEB,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+
+            // Enlace de alternar abajo: Registrarse / Iniciar sesión
             TextButton(
-                onClick = { viewModel.openForgotPasswordDialog() }
+                onClick = { viewModel.toggleAuthMode() }
             ) {
                 Text(
-                    text = "¿Olvidaste tu contraseña?",
+                    text = if (uiState.isRegisterMode) "¿Ya tienes una cuenta? Inicia sesión" else "¿No tienes una cuenta? Regístrate",
                     fontSize = 13.sp,
-                    color = BlueUEB,
-                    fontWeight = FontWeight.Medium
+                    color = TextPrimary,
+                    fontWeight = FontWeight.SemiBold
                 )
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 }
