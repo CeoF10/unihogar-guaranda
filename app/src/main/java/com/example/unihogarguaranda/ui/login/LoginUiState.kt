@@ -2,8 +2,8 @@ package com.example.unihogarguaranda.ui.login
 
 /**
  * Roles de usuario en el ecosistema UniHogar Guaranda.
- * - ESTUDIANTE: Requiere validacion de correo institucional (@ueb.edu.ec).
- * - PROPIETARIO: Requiere acreditacion juridica de identidad y titularidad del inmueble.
+ * - ESTUDIANTE: Requiere validación de correo institucional (@ueb.edu.ec).
+ * - PROPIETARIO: Requiere acreditación jurídica, biometría KYC y geocercado GPS en Guaranda.
  */
 enum class UserRole(val label: String) {
     ESTUDIANTE("Estudiante"),
@@ -12,7 +12,6 @@ enum class UserRole(val label: String) {
 
 /**
  * Tipos de documentos legales admitidos para acreditar propiedad en el Cantón Guaranda.
- * Cumple con la normativa civil y municipal de arrendamiento de viviendas para estudiantes.
  */
 enum class LegalDocumentType(val label: String, val description: String) {
     PREDIAL_MUNICIPAL(
@@ -45,7 +44,6 @@ enum class VerificationStatus(val label: String) {
 
 /**
  * Estado inmutable de la interfaz de autenticación y registro (MVI / MVVM).
- * Centraliza las validaciones de acceso institucional y acreditación legal.
  */
 data class LoginUiState(
     // Credenciales de acceso
@@ -65,22 +63,36 @@ data class LoginUiState(
     val confirmPassword: String = "",
 
     // ========================================================================
-    // MODULO DE ACREDITACION Y SEGURIDAD JURIDICA (PROPIETARIO / ARRENDADOR)
+    // 1. IDENTIFICACIÓN Y CONEXIÓN CON REGISTRO CIVIL DEL ECUADOR
     // ========================================================================
-    // 1. Identificación ciudadana validada mediante algoritmo Módulo 10
     val identificationNumber: String = "", // Cédula ecuatoriana de 10 dígitos
     val isCedulaValid: Boolean = false,
+    val registroCivilNombres: String? = null,
+    val isConsultandoRegistroCivil: Boolean = false,
 
-    // 2. Ubicación física real en Guaranda
-    val ownerAddress: String = "", // Dirección o barrio en el Cantón Guaranda
+    // ========================================================================
+    // 2. GEOCERCADO GPS EN TIEMPO REAL (CANTÓN GUARANDA)
+    // ========================================================================
+    val gpsLatitude: Double? = null,
+    val gpsLongitude: Double? = null,
+    val isGpsInsideGuaranda: Boolean = false,
+    val gpsDistanceKm: Double? = null,
+    val gpsAddressLabel: String? = null,
 
-    // 3. Clave catastral asignada por el GAD Municipal de Guaranda
-    val cadastralCode: String = "", // Ej: 02-01-05-12-004
+    // ========================================================================
+    // 3. BIOMETRÍA KYC: SELFIE SOSTENIENDO CÉDULA AL LADO DEL ROSTRO
+    // ========================================================================
+    val isSelfieWithCedulaTaken: Boolean = false,
+    val biometricScore: Int = 0, // Porcentaje de similitud facial (0 - 100%)
+    val isBiometricApproved: Boolean = false,
 
-    // 4. Tipo de documento probatorio seleccionado
+    // ========================================================================
+    // 4. ACREDITACIÓN JURÍDICA Y EXPEDIENTE DIGITAL
+    // ========================================================================
+    val ownerAddress: String = "",
+    val cadastralCode: String = "",
     val legalDocType: LegalDocumentType = LegalDocumentType.PREDIAL_MUNICIPAL,
 
-    // 5. Carga de evidencias documentales obligatorias
     val idDocUploaded: Boolean = false,
     val idDocFileName: String? = null,
 
@@ -90,10 +102,7 @@ data class LoginUiState(
     val utilityBillUploaded: Boolean = false,
     val utilityBillFileName: String? = null,
 
-    // 6. Declaración juramentada de titularidad y responsabilidad legal
     val isOwnershipDeclared: Boolean = false,
-
-    // 7. Estado resultante de la auditoría jurídica
     val verificationStatus: VerificationStatus = VerificationStatus.PENDIENTE_AUDITORIA,
 
     // Recuperación de Acceso (RF02)
