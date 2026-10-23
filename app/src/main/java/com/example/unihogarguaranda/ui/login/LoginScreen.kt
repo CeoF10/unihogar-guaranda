@@ -10,7 +10,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -59,7 +60,7 @@ fun LoginScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     Text(
-                        text = "Ingrese su correo registrado para recibir un enlace temporal de recuperación (RF02).",
+                        text = "Ingrese su correo registrado para recibir un enlace temporal de recuperacion.",
                         fontSize = 13.sp,
                         color = TextSecondary
                     )
@@ -109,17 +110,17 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(14.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
 
             // Logo oficial UniHogar
             Image(
                 painter = painterResource(id = R.drawable.app_logo),
                 contentDescription = "Logo UniHogar",
                 modifier = Modifier
-                    .size(90.dp)
-                    .clip(RoundedCornerShape(22.dp))
+                    .size(110.dp)
+                    .clip(RoundedCornerShape(26.dp))
             )
 
             // Titular y lema
@@ -127,89 +128,44 @@ fun LoginScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = "Uni",
-                        fontSize = 26.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Black,
                         color = BlueUEB
                     )
                     Text(
                         text = "Hogar",
-                        fontSize = 26.sp,
+                        fontSize = 28.sp,
                         fontWeight = FontWeight.Black,
                         color = RedUEB
                     )
                 }
                 Text(
                     text = "Guaranda",
-                    fontSize = 14.sp,
+                    fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = BlueUEB,
                     letterSpacing = 2.sp
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Tu espacio cerca de la UEB",
-                    fontSize = 13.sp,
+                    fontSize = 14.sp,
                     color = TextSecondary,
                     textAlign = TextAlign.Center
                 )
             }
 
-            // Pestañas Iniciar Sesión / Registrarse
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
-                color = Color.White,
-                shadowElevation = 1.dp
-            ) {
-                Row(
-                    modifier = Modifier.padding(4.dp),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (!uiState.isRegisterMode) BlueUEB else Color.Transparent)
-                            .clickable { if (uiState.isRegisterMode) viewModel.toggleAuthMode() }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Iniciar Sesión",
-                            fontSize = 14.sp,
-                            fontWeight = if (!uiState.isRegisterMode) FontWeight.Bold else FontWeight.Medium,
-                            color = if (!uiState.isRegisterMode) Color.White else TextPrimary
-                        )
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(if (uiState.isRegisterMode) BlueUEB else Color.Transparent)
-                            .clickable { if (!uiState.isRegisterMode) viewModel.toggleAuthMode() }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "Registrarse",
-                            fontSize = 14.sp,
-                            fontWeight = if (uiState.isRegisterMode) FontWeight.Bold else FontWeight.Medium,
-                            color = if (uiState.isRegisterMode) Color.White else TextPrimary
-                        )
-                    }
-                }
-            }
+            Spacer(modifier = Modifier.height(4.dp))
 
             // Selector de Rol: Estudiante / Propietario
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(16.dp),
                 color = Color.White,
-                shadowElevation = 1.dp
+                shadowElevation = 2.dp
             ) {
                 Row(
-                    modifier = Modifier.padding(4.dp),
+                    modifier = Modifier.padding(6.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     UserRole.values().forEach { role ->
@@ -217,7 +173,7 @@ fun LoginScreen(
                         Box(
                             modifier = Modifier
                                 .weight(1f)
-                                .clip(RoundedCornerShape(10.dp))
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(if (isSelected) RedUEB else Color.Transparent)
                                 .clickable { viewModel.onRoleChanged(role) }
                                 .padding(vertical = 10.dp),
@@ -225,7 +181,7 @@ fun LoginScreen(
                         ) {
                             Text(
                                 text = role.label,
-                                fontSize = 13.sp,
+                                fontSize = 14.sp,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) Color.White else TextPrimary
                             )
@@ -246,58 +202,6 @@ fun LoginScreen(
                 color = BlueUEB,
                 fontWeight = FontWeight.Medium
             )
-
-            // Campos de Registro Adicionales
-            if (uiState.isRegisterMode) {
-                OutlinedTextField(
-                    value = uiState.name,
-                    onValueChange = { viewModel.onNameChanged(it) },
-                    label = { Text("Nombre completo") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = BlueUEB,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BlueUEB,
-                        unfocusedBorderColor = DividerColor,
-                        focusedLabelColor = BlueUEB,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp)
-                )
-
-                OutlinedTextField(
-                    value = uiState.phone,
-                    onValueChange = { viewModel.onPhoneChanged(it) },
-                    label = { Text("Teléfono / Celular") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Phone,
-                            contentDescription = null,
-                            tint = BlueUEB,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    singleLine = true,
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BlueUEB,
-                        unfocusedBorderColor = DividerColor,
-                        focusedLabelColor = BlueUEB,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp)
-                )
-            }
 
             // Input Correo
             OutlinedTextField(
@@ -365,73 +269,19 @@ fun LoginScreen(
                 ),
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Password,
-                    imeAction = if (uiState.isRegisterMode) ImeAction.Next else ImeAction.Done
+                    imeAction = ImeAction.Done
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
                         focusManager.clearFocus()
-                        viewModel.submit()
+                        viewModel.login()
                     }
                 ),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(14.dp)
             )
 
-            // Input Confirmar Contraseña (si es Registro)
-            if (uiState.isRegisterMode) {
-                OutlinedTextField(
-                    value = uiState.confirmPassword,
-                    onValueChange = { viewModel.onConfirmPasswordChanged(it) },
-                    label = { Text("Confirmar contraseña") },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Lock,
-                            contentDescription = null,
-                            tint = BlueUEB,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = BlueUEB,
-                        unfocusedBorderColor = DividerColor,
-                        focusedLabelColor = BlueUEB,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
-                    ),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Password,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            focusManager.clearFocus()
-                            viewModel.submit()
-                        }
-                    ),
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(14.dp)
-                )
-            }
-
-            // Mensajes de Éxito o Error
-            uiState.successMessage?.let { msg ->
-                Surface(
-                    shape = RoundedCornerShape(10.dp),
-                    color = Color(0xFFD1FAE5),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = msg,
-                        color = Color(0xFF065F46),
-                        style = MaterialTheme.typography.bodySmall,
-                        modifier = Modifier.padding(10.dp),
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-
+            // Mensajes de Error
             uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
@@ -441,17 +291,19 @@ fun LoginScreen(
                 )
             }
 
-            // Botón Principal de Acción
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Botón Principal de Acción "Comenzar"
             Button(
                 onClick = {
                     focusManager.clearFocus()
-                    viewModel.submit()
+                    viewModel.login()
                 },
                 enabled = !uiState.isLoading,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(25.dp),
+                    .height(52.dp),
+                shape = RoundedCornerShape(26.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = RedUEB,
                     contentColor = Color.White
@@ -465,40 +317,26 @@ fun LoginScreen(
                     )
                 } else {
                     Text(
-                        text = if (uiState.isRegisterMode) "Crear cuenta" else "Comenzar",
+                        text = "Comenzar",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            // Enlace Olvidaste tu contraseña (solo en modo Login)
-            if (!uiState.isRegisterMode) {
-                TextButton(
-                    onClick = { viewModel.openForgotPasswordDialog() }
-                ) {
-                    Text(
-                        text = "¿Olvidaste tu contraseña?",
-                        fontSize = 13.sp,
-                        color = BlueUEB,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            }
-
-            // Enlace para alternar entre Registrarse e Iniciar Sesión
+            // Enlace Olvidaste tu contraseña
             TextButton(
-                onClick = { viewModel.toggleAuthMode() }
+                onClick = { viewModel.openForgotPasswordDialog() }
             ) {
                 Text(
-                    text = if (uiState.isRegisterMode) "¿Ya tienes una cuenta? Inicia sesión" else "¿No tienes una cuenta? Regístrate",
+                    text = "¿Olvidaste tu contraseña?",
                     fontSize = 13.sp,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.SemiBold
+                    color = BlueUEB,
+                    fontWeight = FontWeight.Medium
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
