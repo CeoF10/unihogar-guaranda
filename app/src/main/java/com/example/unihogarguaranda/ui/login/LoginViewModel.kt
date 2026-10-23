@@ -113,7 +113,7 @@ class LoginViewModel : ViewModel() {
         }
     }
 
-    private fun login() {
+    fun login() {
         val currentState = _uiState.value
 
         if (currentState.email.isBlank()) {
