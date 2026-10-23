@@ -12,5 +12,17 @@ data class LoginUiState(
     val isPasswordVisible: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isSuccess: Boolean = false
+    val successMessage: String? = null,
+    val isSuccess: Boolean = false,
+
+    // Modo Registro (RF01)
+    val isRegisterMode: Boolean = false,
+    val name: String = "",
+    val phone: String = "",
+    val confirmPassword: String = "",
+
+    // Recuperación de Acceso (RF02)
+    val showForgotPasswordDialog: Boolean = false,
+    val forgotPasswordEmail: String = "",
+    val forgotPasswordMessage: String? = null
 )
