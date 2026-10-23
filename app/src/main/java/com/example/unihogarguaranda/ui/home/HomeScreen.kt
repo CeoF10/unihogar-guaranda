@@ -746,6 +746,87 @@ fun OwnerHomeScreen(
                     }
                 }
 
+                // ============================================================
+                // MODULO DE AUDITORIA Y SEGURIDAD JURIDICA (CANTÓN GUARANDA)
+                // ============================================================
+                item {
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Gavel,
+                                        contentDescription = null,
+                                        tint = BlueUEB,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = "Acreditación Jurídica",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 15.sp,
+                                        color = BlueUEB
+                                    )
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFFFEF3C7)
+                                ) {
+                                    Text(
+                                        text = "EN AUDITORÍA",
+                                        color = Color(0xFF92400E),
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Expediente en verificación por Bienestar Estudiantil UEB y Catastro Municipal:",
+                                fontSize = 12.sp,
+                                color = TextPrimary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Cédula ecuatoriana validada con Registro Civil (Módulo 10)", fontSize = 11.sp, color = TextSecondary)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Título de dominio / Predial en cotejo con GAD Guaranda", fontSize = 11.sp, color = TextSecondary)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("Planilla de servicio básico de Guaranda adjunta", fontSize = 11.sp, color = TextSecondary)
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Text(
+                                text = "Nota: La publicación de inmuebles se habilitará una vez aprobado el dictamen legal para proteger la seguridad de los estudiantes.",
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
+                                lineHeight = 15.sp
+                            )
+                        }
+                    }
+                }
+
                 item {
                     Text("Tus Inmuebles", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = TextPrimary)
                 }

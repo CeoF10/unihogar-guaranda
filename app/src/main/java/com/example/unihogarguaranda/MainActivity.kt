@@ -17,20 +17,37 @@ import com.example.unihogarguaranda.ui.login.LoginViewModel
 import com.example.unihogarguaranda.ui.login.UserRole
 import com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme
 
+/**
+ * Actividad Principal (Punto de entrada de la aplicación UniHogar Guaranda).
+ * 
+ * Arquitectura y Principios de Diseño:
+ * - Single Activity Architecture con Jetpack Compose (100% UI declarativa).
+ * - Control de navegación reactiva basado en estado inmutable (MVI / State-driven navigation).
+ * - Orquestación de sesiones según rol: Estudiante UEB vs. Arrendador / Propietario Acreditado.
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        // Habilitar visualización edge-to-edge con diseño inmersivo
         enableEdgeToEdge()
+        
         setContent {
             UniHogarGuarandaTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // Estado de sesión del usuario autenticado (Rol y Correo electrónico)
+                    // Si es null -> muestra la pantalla de Login/Registro.
+                    // Si contiene datos -> enruta al dashboard respectivo.
                     var loggedInUser by remember { mutableStateOf<Pair<UserRole, String>?>(null) }
+                    
+                    // Instancia compartida del ViewModel de autenticación
                     val loginViewModel: LoginViewModel = viewModel()
 
                     if (loggedInUser == null) {
+                        // Flujo 1: Pantalla de Acceso Institucional y Acreditación Jurídica
                         LoginScreen(
                             viewModel = loginViewModel,
                             onLoginSuccess = { role, email ->
@@ -39,7 +56,10 @@ class MainActivity : ComponentActivity() {
                         )
                     } else {
                         val (role, email) = loggedInUser!!
+                        
+                        // Flujo 2: Enrutamiento según perfil del usuario autenticado
                         if (role == UserRole.ESTUDIANTE) {
+                            // Dashboard de Estudiante: Catálogo de viviendas verificadas en Guaranda
                             StudentHomeScreen(
                                 studentEmail = email,
                                 onLogout = {
@@ -48,6 +68,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         } else {
+                            // Dashboard de Propietario: Estado de acreditación legal y gestión de anuncios
                             OwnerHomeScreen(
                                 ownerEmail = email,
                                 onLogout = {
