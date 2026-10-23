@@ -7,8 +7,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -64,7 +63,12 @@ fun InteractiveMapScreen(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text("🎓", fontSize = 16.sp)
+                Icon(
+                    imageVector = Icons.Default.School,
+                    contentDescription = null,
+                    tint = BlueUEB,
+                    modifier = Modifier.size(16.dp)
+                )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     "Universidad Estatal de Bolívar (Campus Matriz)",
@@ -134,9 +138,11 @@ fun InteractiveMapScreen(
                                 .background(if (isSelected) RedUEB else RedUEB.copy(alpha = 0.1f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(
-                                "🏠",
-                                fontSize = if (isSelected) 18.sp else 14.sp
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = null,
+                                tint = if (isSelected) Color.White else RedUEB,
+                                modifier = Modifier.size(if (isSelected) 18.dp else 14.dp)
                             )
                         }
                     }
@@ -222,11 +228,20 @@ fun InteractiveMapScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "📍 A ${prop.campusDistance} del campus",
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = RedUEB,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = "A ${prop.campusDistance} del campus",
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
 
                         Button(
                             onClick = { onPropertySelect(prop) },

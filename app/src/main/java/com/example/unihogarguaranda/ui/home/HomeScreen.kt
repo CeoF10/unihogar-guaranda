@@ -29,12 +29,12 @@ import com.example.unihogarguaranda.ui.screens.InteractiveMapScreen
 import com.example.unihogarguaranda.ui.screens.PropertyDetailScreen
 import com.example.unihogarguaranda.ui.theme.*
 
-data class CategoryItem(val id: String, val title: String, val color: Color, val iconText: String)
+data class CategoryItem(val id: String, val title: String, val color: Color, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 val showcaseCategories = listOf(
-    CategoryItem("hab", "Habitaciones", RedUEB, "🛏️"),
-    CategoryItem("dep", "Departamentos", BlueUEB, "🏢"),
-    CategoryItem("cas", "Casas", Color(0xFF10B981), "🏡")
+    CategoryItem("hab", "Habitaciones", RedUEB, Icons.Default.Bed),
+    CategoryItem("dep", "Departamentos", BlueUEB, Icons.Default.Apartment),
+    CategoryItem("cas", "Casas", Color(0xFF10B981), Icons.Default.Home)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -264,7 +264,12 @@ fun StudentCatalogContent(
                                 .background(category.color),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = category.iconText, fontSize = 24.sp)
+                            Icon(
+                                imageVector = category.icon,
+                                contentDescription = category.title,
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
@@ -311,7 +316,12 @@ fun StudentCatalogContent(
                             .background(RedUEB),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("➔", color = Color.White, fontSize = 14.sp)
+                        Icon(
+                            imageVector = Icons.Default.ArrowForward,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(16.dp)
+                        )
                     }
                 }
             }
@@ -360,7 +370,12 @@ fun StudentCatalogContent(
                         contentAlignment = Alignment.Center
                     ) {
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("🏠", fontSize = 42.sp)
+                            Icon(
+                                imageVector = Icons.Default.Home,
+                                contentDescription = null,
+                                tint = TextSecondary,
+                                modifier = Modifier.size(42.dp)
+                            )
                             Text(
                                 "Vista del Inmueble",
                                 fontSize = 12.sp,
@@ -447,7 +462,12 @@ fun StudentCatalogContent(
                             }
 
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text("📍", fontSize = 12.sp)
+                                Icon(
+                                    imageVector = Icons.Default.LocationOn,
+                                    contentDescription = null,
+                                    tint = RedUEB,
+                                    modifier = Modifier.size(14.dp)
+                                )
                                 Spacer(modifier = Modifier.width(3.dp))
                                 Text(
                                     text = property.campusDistance,
@@ -533,7 +553,12 @@ fun FavoritesTabContent(
                             .background(Color(0xFFE2E8F0)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("🏠", fontSize = 28.sp)
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = null,
+                            tint = TextSecondary,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
 
                     Spacer(modifier = Modifier.width(14.dp))
@@ -553,11 +578,20 @@ fun FavoritesTabContent(
                             color = BlueUEB
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        Text(
-                            text = "📍 ${property.campusDistance}",
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = RedUEB,
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text(
+                                text = property.campusDistance,
+                                fontSize = 12.sp,
+                                color = TextSecondary
+                            )
+                        }
                     }
 
                     IconButton(onClick = { onRemoveFavorite(property) }) {
