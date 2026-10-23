@@ -662,6 +662,20 @@ fun OwnerHomeScreen(
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(0) }
+    var showRegisterWizard by remember { mutableStateOf(false) }
+    var hasSubmittedProperty by remember { mutableStateOf(false) }
+
+    if (showRegisterWizard) {
+        com.example.unihogarguaranda.ui.screens.RegisterPropertyWizardScreen(
+            onDismiss = { showRegisterWizard = false },
+            onPropertySubmitted = {
+                showRegisterWizard = false
+                hasSubmittedProperty = true
+                Toast.makeText(context, "Expediente del inmueble ingresado para Auditoría UEB", Toast.LENGTH_LONG).show()
+            }
+        )
+        return
+    }
 
     Scaffold(
         containerColor = BackgroundLight,
@@ -690,13 +704,13 @@ fun OwnerHomeScreen(
         floatingActionButton = {
             ExtendedFloatingActionButton(
                 onClick = {
-                    Toast.makeText(context, "Módulo de publicación de inmuebles", Toast.LENGTH_SHORT).show()
+                    showRegisterWizard = true
                 },
                 containerColor = RedUEB,
                 contentColor = Color.White,
                 shape = RoundedCornerShape(20.dp)
             ) {
-                Text("+ Publicar inmueble", fontWeight = FontWeight.Bold)
+                Text("+ Registrar inmueble por pasos", fontWeight = FontWeight.Bold)
             }
         },
         bottomBar = {
