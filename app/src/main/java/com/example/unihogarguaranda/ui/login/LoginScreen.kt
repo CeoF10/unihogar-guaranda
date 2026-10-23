@@ -16,6 +16,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -32,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unihogarguaranda.R
+import com.example.unihogarguaranda.ui.components.CameraBiometricCaptureDialog
 import com.example.unihogarguaranda.ui.theme.*
 
 /**
@@ -48,6 +52,17 @@ fun LoginScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
+    var showCameraDialog by remember { mutableStateOf(false) }
+
+    if (showCameraDialog) {
+        CameraBiometricCaptureDialog(
+            onDismiss = { showCameraDialog = false },
+            onBiometricConfirmed = {
+                showCameraDialog = false
+                viewModel.performBiometricScan()
+            }
+        )
+    }
 
     if (uiState.isSuccess) {
         onLoginSuccess(uiState.role, uiState.email)
@@ -313,7 +328,7 @@ fun LoginScreen(
                             )
                             Spacer(modifier = Modifier.height(10.dp))
                             Button(
-                                onClick = { viewModel.performBiometricScan() },
+                                onClick = { showCameraDialog = true },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(10.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -323,7 +338,7 @@ fun LoginScreen(
                                 Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (uiState.isBiometricApproved) "Identidad Biométrica Aprobada" else "Escanear Rostro y Cédula (Cámara)",
+                                    text = if (uiState.isBiometricApproved) "Identidad Biométrica Aprobada (Cámara)" else "Abrir Cámara para Escanear Rostro",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
