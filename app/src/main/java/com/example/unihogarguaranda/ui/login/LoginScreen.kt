@@ -110,16 +110,16 @@ fun LoginScreen(
             contentScale = ContentScale.Crop
         )
 
-        // Overlay con filtro para asegurar contraste y legibilidad
+        // Overlay equilibrado con degradado suave
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color.White.copy(alpha = 0.82f),
-                            Color.White.copy(alpha = 0.88f),
-                            Color(0xFFF8FAFC).copy(alpha = 0.94f)
+                            Color.White.copy(alpha = 0.35f),
+                            Color.White.copy(alpha = 0.50f),
+                            Color.White.copy(alpha = 0.68f)
                         )
                     )
                 )
@@ -150,36 +150,45 @@ fun LoginScreen(
                     .clip(RoundedCornerShape(24.dp))
             )
 
-            // Titular y lema
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            // Titular y lema con contenedor para asegurar contraste sobre la fotografia
+            Surface(
+                shape = RoundedCornerShape(18.dp),
+                color = Color.White.copy(alpha = 0.88f),
+                shadowElevation = 1.dp
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "Uni",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Black,
+                            color = BlueUEB
+                        )
+                        Text(
+                            text = "Hogar",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Black,
+                            color = RedUEB
+                        )
+                    }
                     Text(
-                        text = "Uni",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Black,
-                        color = BlueUEB
+                        text = "Guaranda",
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = BlueUEB,
+                        letterSpacing = 2.sp
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "Hogar",
-                        fontSize = 28.sp,
-                        fontWeight = FontWeight.Black,
-                        color = RedUEB
+                        text = if (uiState.isRegisterMode) "Registro de nueva cuenta" else "Tu espacio cerca de la UEB",
+                        fontSize = 13.sp,
+                        color = TextSecondary,
+                        textAlign = TextAlign.Center
                     )
                 }
-                Text(
-                    text = "Guaranda",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = BlueUEB,
-                    letterSpacing = 2.sp
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = if (uiState.isRegisterMode) "Registro de nueva cuenta" else "Tu espacio cerca de la UEB",
-                    fontSize = 14.sp,
-                    color = TextSecondary,
-                    textAlign = TextAlign.Center
-                )
             }
 
             Spacer(modifier = Modifier.height(2.dp))
@@ -542,28 +551,39 @@ fun LoginScreen(
 
             // Enlace Olvidaste tu contraseña (solo en modo Login)
             if (!uiState.isRegisterMode) {
-                TextButton(
-                    onClick = { viewModel.openForgotPasswordDialog() }
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color.White.copy(alpha = 0.85f)
                 ) {
-                    Text(
-                        text = "¿Olvidaste tu contraseña?",
-                        fontSize = 13.sp,
-                        color = BlueUEB,
-                        fontWeight = FontWeight.Medium
-                    )
+                    TextButton(
+                        onClick = { viewModel.openForgotPasswordDialog() }
+                    ) {
+                        Text(
+                            text = "¿Olvidaste tu contraseña?",
+                            fontSize = 13.sp,
+                            color = BlueUEB,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
 
             // Enlace de alternar abajo: Registrarse / Iniciar sesión
-            TextButton(
-                onClick = { viewModel.toggleAuthMode() }
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = Color.White.copy(alpha = 0.85f)
             ) {
-                Text(
-                    text = if (uiState.isRegisterMode) "¿Ya tienes una cuenta? Inicia sesión" else "¿No tienes una cuenta? Regístrate",
-                    fontSize = 13.sp,
-                    color = TextPrimary,
-                    fontWeight = FontWeight.SemiBold
-                )
+                TextButton(
+                    onClick = { viewModel.toggleAuthMode() }
+                ) {
+                    Text(
+                        text = if (uiState.isRegisterMode) "¿Ya tienes una cuenta? Inicia sesión" else "¿No tienes una cuenta? Regístrate",
+                        fontSize = 13.sp,
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 4.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
