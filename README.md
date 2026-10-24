@@ -1,4 +1,8 @@
-# UniHogar Guaranda
+# UniHogar Guaranda — App Móvil Android
+
+> 🎓 **Proyecto Académico** | Universidad Estatal de Bolívar  
+> • **Materia:** Desarrollo de Software Móvil (Programación Móvil)  
+> • **Ciclo:** 6to Ciclo "A" — Ingeniería de Software  
 
 > Propuesta técnica y arquitectónica para el Producto Mínimo Viable (MVP) móvil de arriendos estudiantiles.  
 > Universidad Estatal de Bolívar — Carrera de Software — Sexto Ciclo "A".
