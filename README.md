@@ -12,10 +12,6 @@
 ## Integrantes
 * Sebastian Velastegui
 * Neicer Jimenez
-
-**Docente:** Ing. Patricia León Monar, Mgs.  
-**Asignatura:** Desarrollo de Software Móvil
-
 ---
 
 ## Descripción del Proyecto
