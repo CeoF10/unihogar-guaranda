@@ -28,8 +28,8 @@ object RegistroCivilService {
 
         // Nombres precargados para demostración académica
         val nombreAsignado = when (cedula) {
-            "0201834921" -> "NEYCER ROBERTO JIMENEZ FLORES"
-            "0201948572" -> "ELIAS SEBASTIAN VELASTEGUI"
+            "0201834926" -> "NEYCER ROBERTO JIMENEZ FLORES"
+            "0201948577" -> "ELIAS SEBASTIAN VELASTEGUI"
             else -> "PROPIETARIO REGISTRADO BOLIVAR"
         }
 

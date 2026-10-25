@@ -1,5 +1,9 @@
 package com.example.unihogarguaranda.ui.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,11 +19,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unihogarguaranda.ui.theme.*
+import androidx.core.content.ContextCompat
+import com.example.unihogarguaranda.util.GpsLocationProvider
+import com.example.unihogarguaranda.util.GpsResult
 import com.example.unihogarguaranda.util.GuarandaGeofenceValidator
 
 /**
@@ -45,6 +53,8 @@ fun RegisterPropertyWizardScreen(
     var gpsLatitude by remember { mutableStateOf<Double?>(null) }
     var gpsLongitude by remember { mutableStateOf<Double?>(null) }
     var isGpsValid by remember { mutableStateOf(false) }
+    var gpsAccuracy by remember { mutableStateOf<Float?>(null) }
+    var isCapturingGps by remember { mutableStateOf(false) }
 
     // Paso 2: Catastro y Documento
     var cadastralCode by remember { mutableStateOf("") }
@@ -58,6 +68,44 @@ fun RegisterPropertyWizardScreen(
     // Paso 4: Declaración Juramentada
     var isOwnershipDeclared by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    val context = LocalContext.current
+
+    // Lectura GPS real + validación de geocerca de Guaranda
+    fun captureGps() {
+        isCapturingGps = true
+        errorMessage = null
+        GpsLocationProvider.requestCurrentLocation(context) { result ->
+            isCapturingGps = false
+            when (result) {
+                is GpsResult.Success -> {
+                    gpsLatitude = result.latitude
+                    gpsLongitude = result.longitude
+                    gpsAccuracy = result.accuracyMeters
+                    isGpsValid = GuarandaGeofenceValidator.isWithinGuaranda(result.latitude, result.longitude)
+                    if (!isGpsValid) {
+                        val km = GuarandaGeofenceValidator.calculateDistanceKm(result.latitude, result.longitude)
+                        errorMessage = "Ubicación fuera de Guaranda (a %.1f km del centro). Solo se aceptan inmuebles dentro de %.0f km."
+                            .format(km, GuarandaGeofenceValidator.MAX_RADIUS_KM)
+                    }
+                }
+                is GpsResult.Error -> {
+                    isGpsValid = false
+                    errorMessage = result.message
+                }
+            }
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { grants ->
+        if (grants[Manifest.permission.ACCESS_FINE_LOCATION] == true) {
+            captureGps()
+        } else {
+            errorMessage = "Se requiere permiso de ubicación precisa para validar el inmueble."
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -205,27 +253,44 @@ fun RegisterPropertyWizardScreen(
                         if (gpsLatitude != null) {
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Coordenadas: Lat $gpsLatitude, Lng $gpsLongitude (Alpachaca, Guaranda)",
+                                text = "Coordenadas: Lat %.6f, Lng %.6f (±%d m)".format(gpsLatitude, gpsLongitude, gpsAccuracy?.toInt() ?: 0),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = Color(0xFF047857)
+                                color = if (isGpsValid) Color(0xFF047857) else RedUEB
                             )
                         }
                         Spacer(modifier = Modifier.height(10.dp))
                         Button(
                             onClick = {
-                                gpsLatitude = -1.591234
-                                gpsLongitude = -79.004567
-                                isGpsValid = GuarandaGeofenceValidator.isWithinGuaranda(gpsLatitude!!, gpsLongitude!!)
-                                errorMessage = null
+                                val granted = ContextCompat.checkSelfPermission(
+                                    context, Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED
+                                if (granted) {
+                                    captureGps()
+                                } else {
+                                    locationPermissionLauncher.launch(
+                                        arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+                                    )
+                                }
                             },
+                            enabled = !isCapturingGps,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(containerColor = if (isGpsValid) Color(0xFF047857) else BlueUEB),
                             shape = RoundedCornerShape(10.dp)
                         ) {
-                            Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
+                            if (isCapturingGps) {
+                                CircularProgressIndicator(color = Color.White, strokeWidth = 2.dp, modifier = Modifier.size(16.dp))
+                            } else {
+                                Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
+                            }
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(if (isGpsValid) "Coordenadas de Guaranda Verificadas" else "Capturar Coordenadas GPS del Inmueble")
+                            Text(
+                                when {
+                                    isCapturingGps -> "Obteniendo señal GPS..."
+                                    isGpsValid -> "Coordenadas Verificadas · Volver a capturar"
+                                    else -> "Capturar Coordenadas GPS del Inmueble"
+                                }
+                            )
                         }
                     }
                 }
