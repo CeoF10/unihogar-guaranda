@@ -88,6 +88,67 @@ object MockData {
             isFavorite = true,
             lat = -1.5942,
             lng = -79.0075
+        ),
+        Property(
+            id = 5,
+            title = "Suite independiente Laguacoto",
+            type = "Departamento",
+            location = "Vía a Laguacoto · Junto al Campus Laguacoto",
+            campusDistance = "300 m",
+            price = 220.0,
+            deposit = 120.0,
+            beds = 1,
+            baths = "1 baño privado",
+            services = listOf("WiFi", "Agua", "Luz", "Amoblado", "Parqueadero"),
+            description = "Suite con entrada independiente a pasos del Campus Laguacoto. Cocineta, escritorio amplio y servicios incluidos.",
+            isFeatured = true,
+            lat = -1.6018,
+            lng = -78.9961
+        ),
+        Property(
+            id = 6,
+            title = "Casa familiar en Guanujo",
+            type = "Casa",
+            location = "Parroquia Guanujo · Calle 10 de Agosto",
+            campusDistance = "4.2 km",
+            price = 280.0,
+            deposit = 200.0,
+            beds = 4,
+            baths = "2 baños",
+            services = listOf("Agua", "Luz", "Lavadora", "Patio"),
+            description = "Casa de dos plantas ideal para grupos de 3 a 4 estudiantes. Patio amplio, sala, comedor y buses frecuentes hacia la UEB.",
+            lat = -1.5562,
+            lng = -79.0012
+        ),
+        Property(
+            id = 7,
+            title = "Habitación económica Plaza Roja",
+            type = "Habitación",
+            location = "Plaza Roja · Centro de Guaranda",
+            campusDistance = "1.4 km",
+            price = 120.0,
+            deposit = 80.0,
+            beds = 1,
+            baths = "Baño compartido",
+            services = listOf("Agua", "Luz", "WiFi"),
+            description = "Opción económica en el centro, cerca de mercados, bancos y paradas de bus. Ambiente familiar y tranquilo.",
+            lat = -1.5925,
+            lng = -79.0010
+        ),
+        Property(
+            id = 8,
+            title = "Minidepartamento Alpachaca",
+            type = "Departamento",
+            location = "Barrio Alpachaca · Frente al Campus Matriz",
+            campusDistance = "200 m",
+            price = 230.0,
+            deposit = 150.0,
+            beds = 1,
+            baths = "1 baño privado",
+            services = listOf("WiFi", "Agua", "Luz", "Amoblado", "Lavadora"),
+            description = "Minidepartamento amoblado frente al campus. Sala-cocina, dormitorio, lavandería compartida y seguridad con cámaras.",
+            lat = -1.5908,
+            lng = -79.0049
         )
     )
 }

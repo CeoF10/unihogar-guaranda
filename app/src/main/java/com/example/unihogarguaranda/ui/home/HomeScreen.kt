@@ -50,8 +50,8 @@ fun StudentHomeScreen(
     var showFilterSheet by remember { mutableStateOf(false) }
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
 
-    // Lista de propiedades (vacia para la entrega actual del panel de login e interfaz base)
-    var propertyList by remember { mutableStateOf(emptyList<Property>()) }
+    // Catálogo de inmuebles verificados (datos semilla, alineados con init.sql)
+    var propertyList by remember { mutableStateOf(MockData.initialProperties) }
 
     // Si está viendo el detalle de una vivienda
     if (selectedPropertyDetail != null) {
