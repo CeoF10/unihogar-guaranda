@@ -8,6 +8,7 @@ import com.example.unihogarguaranda.data.EmailRequest
 import com.example.unihogarguaranda.data.LoginRequest
 import com.example.unihogarguaranda.data.RegisterRequest
 import com.example.unihogarguaranda.data.Session
+import com.example.unihogarguaranda.util.CedulaValidator
 import com.example.unihogarguaranda.model.RegistroCivilService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,7 +55,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     fun onIdentificationChanged(id: String) {
         val filtered = id.filter { it.isDigit() }.take(10)
-        val isValid = validateEcuadorianCedula(filtered)
+        val isValid = CedulaValidator.esValida(filtered)
 
         _uiState.update { 
             it.copy(
@@ -264,7 +265,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 return
             }
 
-            if (!validateEcuadorianCedula(currentState.identificationNumber)) {
+            if (!CedulaValidator.esValida(currentState.identificationNumber)) {
                 _uiState.update { 
                     it.copy(errorMessage = "La cédula no cumple el algoritmo Módulo 10 del Registro Civil.") 
                 }
@@ -340,24 +341,5 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 _uiState.update { it.copy(isLoading = false, errorMessage = SIN_CONEXION) }
             }
         }
-    }
-
-    private fun validateEcuadorianCedula(cedula: String): Boolean {
-        if (cedula.length != 10 || !cedula.all { it.isDigit() }) return false
-        val provincia = cedula.substring(0, 2).toIntOrNull() ?: return false
-        if (provincia < 1 || provincia > 24) return false
-
-        val tercerDigito = cedula[2].digitToInt()
-        if (tercerDigito >= 6) return false
-
-        val coeficientes = intArrayOf(2, 1, 2, 1, 2, 1, 2, 1, 2)
-        var suma = 0
-        for (i in 0 until 9) {
-            var valor = cedula[i].digitToInt() * coeficientes[i]
-            if (valor >= 10) valor -= 9
-            suma += valor
-        }
-        val digitoVerificador = if (suma % 10 == 0) 0 else 10 - (suma % 10)
-        return digitoVerificador == cedula[9].digitToInt()
     }
 }

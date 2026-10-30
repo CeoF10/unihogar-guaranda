@@ -46,15 +46,20 @@ object GpsLocationProvider {
         if (location == null) {
             return GpsResult.Error("GPS sin señal. Active la ubicación del dispositivo e intente al aire libre.")
         }
-        if (isMockLocation(location)) {
+        return evaluar(location.latitude, location.longitude, location.accuracy, isMockLocation(location))
+    }
+
+    /** Regla de aceptación separada de la clase Location para poder probarla con JUnit. */
+    internal fun evaluar(latitude: Double, longitude: Double, accuracy: Float, simulada: Boolean): GpsResult {
+        if (simulada) {
             return GpsResult.Error("Se detectó una ubicación simulada (Fake GPS). Desactive apps de ubicación falsa.")
         }
-        if (location.accuracy > MAX_ACCURACY_METERS) {
+        if (accuracy > MAX_ACCURACY_METERS) {
             return GpsResult.Error(
-                "Precisión insuficiente (±${location.accuracy.toInt()} m). Se requiere ±${MAX_ACCURACY_METERS.toInt()} m o menos."
+                "Precisión insuficiente (±${accuracy.toInt()} m). Se requiere ±${MAX_ACCURACY_METERS.toInt()} m o menos."
             )
         }
-        return GpsResult.Success(location.latitude, location.longitude, location.accuracy)
+        return GpsResult.Success(latitude, longitude, accuracy)
     }
 
     @Suppress("DEPRECATION")
