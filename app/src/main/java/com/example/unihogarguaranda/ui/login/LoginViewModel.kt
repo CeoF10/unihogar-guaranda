@@ -1,7 +1,13 @@
 package com.example.unihogarguaranda.ui.login
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.unihogarguaranda.data.ApiClient
+import com.example.unihogarguaranda.data.EmailRequest
+import com.example.unihogarguaranda.data.LoginRequest
+import com.example.unihogarguaranda.data.RegisterRequest
+import com.example.unihogarguaranda.data.Session
 import com.example.unihogarguaranda.model.RegistroCivilService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -9,12 +15,17 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.io.IOException
 
 /**
  * ViewModel enfocado en la Fase 1: Autenticación, Creación de Cuenta y
  * Validación de Identidad del Usuario (Registro Civil y Biometría).
  */
-class LoginViewModel : ViewModel() {
+class LoginViewModel(application: Application) : AndroidViewModel(application) {
+
+    private companion object {
+        const val SIN_CONEXION = "No hay conexión con el servidor UniHogar. Verifique su internet."
+    }
 
     private val _uiState = MutableStateFlow(
         LoginUiState(email = "neicer.jimenez@ueb.edu.ec")
@@ -149,10 +160,15 @@ class LoginViewModel : ViewModel() {
             return
         }
 
-        _uiState.update { 
-            it.copy(
-                forgotPasswordMessage = "Enlace temporal enviado a: $email. Revise su bandeja de entrada."
-            ) 
+        // RF02: la API responde igual exista o no el correo
+        viewModelScope.launch {
+            try {
+                val response = ApiClient.service.recuperarClave(EmailRequest(email))
+                val mensaje = response.body()?.mensaje ?: "No se pudo enviar el enlace."
+                _uiState.update { it.copy(forgotPasswordMessage = mensaje) }
+            } catch (e: IOException) {
+                _uiState.update { it.copy(forgotPasswordMessage = SIN_CONEXION) }
+            }
         }
     }
 
@@ -203,8 +219,35 @@ class LoginViewModel : ViewModel() {
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
         viewModelScope.launch {
-            delay(400)
-            _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            try {
+                val response = ApiClient.service.login(LoginRequest(currentState.email, currentState.password))
+                val body = response.body()
+                if (!response.isSuccessful || body == null) {
+                    val message = ApiClient.errorMessage(response.errorBody()?.string(), "No se pudo iniciar sesión.")
+                    _uiState.update { it.copy(isLoading = false, errorMessage = message) }
+                    return@launch
+                }
+
+                // La cuenta debe tener el rol con el que se está entrando
+                val requiredRole = if (currentState.role == UserRole.ESTUDIANTE) "ROLE_ESTUDIANTE" else "ROLE_PROPIETARIO"
+                if (requiredRole !in body.user.roles) {
+                    _uiState.update {
+                        it.copy(isLoading = false, errorMessage = "Esta cuenta no tiene el rol de ${currentState.role.label}.")
+                    }
+                    return@launch
+                }
+
+                Session.save(getApplication(), body.token, body.user)
+                _uiState.update { it.copy(isLoading = false, isSuccess = true) }
+            } catch (e: IOException) {
+                android.util.Log.e("UniHogarAPI", "Login sin conexión", e)
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = SIN_CONEXION
+                    )
+                }
+            }
         }
     }
 
@@ -259,8 +302,8 @@ class LoginViewModel : ViewModel() {
             return
         }
 
-        if (currentState.password.length < 6) {
-            _uiState.update { it.copy(errorMessage = "La contraseña debe tener al menos 6 caracteres.") }
+        if (currentState.password.length < 8) {
+            _uiState.update { it.copy(errorMessage = "La contraseña debe tener al menos 8 caracteres.") }
             return
         }
 
@@ -271,19 +314,34 @@ class LoginViewModel : ViewModel() {
 
         _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
+        // RF01: la cuenta se crea en la API; no puede iniciar sesión hasta confirmar el correo
         viewModelScope.launch {
-            delay(600)
-            _uiState.update { 
-                it.copy(
-                    isLoading = false,
-                    isRegisterMode = false,
-                    identityStatus = OwnerIdentityStatus.VERIFICADO,
-                    successMessage = if (currentState.role == UserRole.PROPIETARIO) {
-                        "Identidad validada con el Registro Civil y Biometría Facial al 96%. Cuenta creada exitosamente. Inicie sesión para registrar sus propiedades."
-                    } else {
-                        "Cuenta estudiantil registrada. Enlace de confirmación enviado a su correo institucional @ueb.edu.ec."
-                    }
-                ) 
+            try {
+                val response = ApiClient.service.register(
+                    RegisterRequest(
+                        nombre = currentState.name.trim(),
+                        email = currentState.email,
+                        password = currentState.password,
+                        rol = if (currentState.role == UserRole.PROPIETARIO) "PROPIETARIO" else "ESTUDIANTE",
+                        telefono = currentState.phone,
+                        cedula = currentState.identificationNumber.takeIf { currentState.role == UserRole.PROPIETARIO }
+                    )
+                )
+                if (!response.isSuccessful) {
+                    val message = ApiClient.errorMessage(response.errorBody()?.string(), "No se pudo crear la cuenta.")
+                    _uiState.update { it.copy(isLoading = false, errorMessage = message) }
+                    return@launch
+                }
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isRegisterMode = false,
+                        identityStatus = OwnerIdentityStatus.VERIFICADO,
+                        successMessage = "Cuenta creada. Revise su correo (${currentState.email}) para confirmarla antes de iniciar sesión."
+                    )
+                }
+            } catch (e: IOException) {
+                _uiState.update { it.copy(isLoading = false, errorMessage = SIN_CONEXION) }
             }
         }
     }

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chincheta de inmueble: círculo rojo UEB con ícono de casa -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp" android:height="36dp"
+    android:viewportWidth="36" android:viewportHeight="36">
+    <path android:fillColor="#FFFFFF" android:pathData="M18,2A16,16 0,1 0,18,34A16,16 0,1 0,18,2Z"/>
+    <path android:fillColor="#B22234" android:pathData="M18,4.5A13.5,13.5 0,1 0,18,31.5A13.5,13.5 0,1 0,18,4.5Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M18,10L10,16.5V25H15.5V20H20.5V25H26V16.5Z"/>
+</vector>

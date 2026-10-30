@@ -18,6 +18,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unihogarguaranda.model.Property
@@ -263,25 +267,27 @@ fun PropertyDetailScreen(
                     .height(280.dp)
                     .background(Color(0xFFE2E8F0))
             ) {
-                // Mock de imagen de dormitorio elegante
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Hotel,
-                        contentDescription = null,
-                        tint = BlueUEB,
-                        modifier = Modifier.size(64.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        "Galería de Fotos (${property.photoCount} imágenes)",
-                        color = BlueUEB,
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
-                    )
+                // RF05: fotos reales de la API; si no hay, se muestra un marcador
+                if (property.fotoUrls.isEmpty()) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(imageVector = Icons.Default.Hotel, contentDescription = null, tint = BlueUEB, modifier = Modifier.size(64.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text("Sin fotos todavía", color = BlueUEB, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    }
+                } else {
+                    val pagerState = rememberPagerState(pageCount = { property.fotoUrls.size })
+                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pagina ->
+                        AsyncImage(
+                            model = property.fotoUrls[pagina],
+                            contentDescription = "Foto ${pagina + 1}",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
 
                 // Botón atrás
@@ -325,7 +331,7 @@ fun PropertyDetailScreen(
                         .padding(bottom = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    repeat(property.photoCount) { index ->
+                    repeat(if (property.fotoUrls.isEmpty()) 1 else property.fotoUrls.size) { index ->
                         Box(
                             modifier = Modifier
                                 .size(if (index == 0) 8.dp else 6.dp)
@@ -366,6 +372,28 @@ fun PropertyDetailScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(6.dp))
+                    // RF08: arriendo, cargos recurrentes y depósito por separado
+                    property.costos?.let { costos ->
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Text("Arriendo: $${costos.arriendo.toInt()}", fontSize = 13.sp, color = TextPrimary)
+                            costos.cargosRecurrentes.orEmpty().forEach { cargo ->
+                                Text(
+                                    "${cargo.nombre}: " + (cargo.monto?.let { "$${it.toInt()}" } ?: "por confirmar"),
+                                    fontSize = 13.sp,
+                                    color = if (cargo.monto == null) RedUEB else TextPrimary
+                                )
+                            }
+                            Text("Depósito (se paga una vez): $${costos.deposito.toInt()}", fontSize = 13.sp, color = TextSecondary)
+                            Text(
+                                text = costos.totalMensual?.let { "Total mensual: $${it.toInt()}" }
+                                    ?: (costos.mensaje ?: "Total pendiente"),
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (costos.totalMensual == null) RedUEB else BlueUEB
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(6.dp))
+                    }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,

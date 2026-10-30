@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Marcador del campus UEB: birrete azul UEB -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="36dp" android:height="36dp"
+    android:viewportWidth="36" android:viewportHeight="36">
+    <path android:fillColor="#003366" android:pathData="M18,2A16,16 0,1 0,18,34A16,16 0,1 0,18,2Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M18,9L28,14L18,19L8,14Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M12,17V23C12,25 15,26.5 18,26.5C21,26.5 24,25 24,23V17L18,20Z"/>
+</vector>

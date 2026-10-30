@@ -12,9 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unihogarguaranda.ui.home.OwnerHomeScreen
 import com.example.unihogarguaranda.ui.home.StudentHomeScreen
+import com.example.unihogarguaranda.data.Session
 import com.example.unihogarguaranda.ui.login.LoginScreen
 import com.example.unihogarguaranda.ui.login.LoginViewModel
 import com.example.unihogarguaranda.ui.login.UserRole
+import com.example.unihogarguaranda.ui.login.WelcomeScreen
 import com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme
 
 /**
@@ -42,11 +44,22 @@ class MainActivity : ComponentActivity() {
                     // Si es null -> muestra la pantalla de Login/Registro.
                     // Si contiene datos -> enruta al dashboard respectivo.
                     var loggedInUser by remember { mutableStateOf<Pair<UserRole, String>?>(null) }
+                    var showWelcome by remember { mutableStateOf(true) }
                     
                     // Instancia compartida del ViewModel de autenticación
                     val loginViewModel: LoginViewModel = viewModel()
 
-                    if (loggedInUser == null) {
+                    if (loggedInUser == null && showWelcome) {
+                        // Flujo 0: Bienvenida con foto del campus UEB
+                        WelcomeScreen(
+                            onStart = {
+                                // "Comenzar" abre el registro de cuenta nueva
+                                if (!loginViewModel.uiState.value.isRegisterMode) loginViewModel.toggleAuthMode()
+                                showWelcome = false
+                            },
+                            onHaveAccount = { showWelcome = false }
+                        )
+                    } else if (loggedInUser == null) {
                         // Flujo 1: Pantalla de Acceso Institucional y Acreditación Jurídica
                         LoginScreen(
                             viewModel = loginViewModel,
@@ -63,6 +76,7 @@ class MainActivity : ComponentActivity() {
                             StudentHomeScreen(
                                 studentEmail = email,
                                 onLogout = {
+                                    Session.clear(this@MainActivity)
                                     loginViewModel.resetState()
                                     loggedInUser = null
                                 }
@@ -72,6 +86,7 @@ class MainActivity : ComponentActivity() {
                             OwnerHomeScreen(
                                 ownerEmail = email,
                                 onLogout = {
+                                    Session.clear(this@MainActivity)
                                     loginViewModel.resetState()
                                     loggedInUser = null
                                 }
