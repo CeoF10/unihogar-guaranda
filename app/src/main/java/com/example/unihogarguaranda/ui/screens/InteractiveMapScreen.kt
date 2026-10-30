@@ -23,7 +23,11 @@ import androidx.core.content.ContextCompat
 import com.example.unihogarguaranda.R
 import com.example.unihogarguaranda.model.Property
 import com.example.unihogarguaranda.ui.theme.*
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import org.osmdroid.config.Configuration
+import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -43,6 +47,38 @@ fun InteractiveMapScreen(
     val context = LocalContext.current
     var selectedProperty by remember { mutableStateOf(properties.firstOrNull()) }
 
+    // Un solo MapView por pantalla; osmdroid necesita enterarse de onResume/onPause
+    val mapView = remember {
+        // OpenStreetMap bloquea user-agents genéricos; identificar la app con nombre propio
+        Configuration.getInstance().userAgentValue = "UniHogarGuaranda-Android/1.0"
+        MapView(context).apply {
+            setTileSource(TileSourceFactory.MAPNIK)
+            setMultiTouchControls(true)
+            // Se usan botones propios de zoom en vez de los de osmdroid
+            zoomController.setVisibility(CustomZoomButtonsController.Visibility.NEVER)
+            minZoomLevel = 11.0
+            maxZoomLevel = 19.0
+            controller.setZoom(14.0)
+            controller.setCenter(GUARANDA_CENTER)
+        }
+    }
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> mapView.onResume()
+                Lifecycle.Event.ON_PAUSE -> mapView.onPause()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        mapView.onResume()
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            mapView.onDetach()
+        }
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -50,16 +86,7 @@ fun InteractiveMapScreen(
     ) {
         AndroidView(
             modifier = Modifier.fillMaxSize(),
-            factory = { ctx ->
-                // OpenStreetMap bloquea user-agents genéricos; identificar la app con nombre propio
-                Configuration.getInstance().userAgentValue = "UniHogarGuaranda-Android/1.0"
-                MapView(ctx).apply {
-                    setTileSource(TileSourceFactory.MAPNIK)
-                    setMultiTouchControls(true)
-                    controller.setZoom(14.0)
-                    controller.setCenter(GUARANDA_CENTER)
-                }
-            },
+            factory = { mapView },
             update = { mapView ->
                 mapView.overlays.clear()
 
@@ -151,6 +178,26 @@ fun InteractiveMapScreen(
                     .background(Color.White)
             ) {
                 Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = BlueUEB)
+            }
+        }
+
+        // Botones de zoom (el pellizco también funciona en el teléfono)
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(end = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            listOf(Icons.Default.Add to "Acercar", Icons.Default.Remove to "Alejar").forEach { (icono, descripcion) ->
+                IconButton(
+                    onClick = { if (icono == Icons.Default.Add) mapView.controller.zoomIn() else mapView.controller.zoomOut() },
+                    modifier = Modifier
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.White)
+                ) {
+                    Icon(icono, contentDescription = descripcion, tint = BlueUEB)
+                }
             }
         }
 

@@ -30,9 +30,13 @@ android {
 
     buildTypes {
         release {
+            // Para pruebas se firma con la clave de depuración; para Google Play se usa una clave propia
+            signingConfig = signingConfigs.getByName("debug")
             optimization {
                 enable = true
-                packageScope = setOf("androidx.**", "kotlin.**", "kotlinx.**")
+                keepRules {
+                    files.add(file("proguard-rules.pro"))
+                }
             }
         }
     }

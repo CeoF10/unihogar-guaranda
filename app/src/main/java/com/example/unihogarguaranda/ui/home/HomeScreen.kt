@@ -382,7 +382,7 @@ fun StudentCatalogContent(
             ) {
                 Box {
                     Image(
-                        painter = painterResource(R.drawable.campus_ueb),
+                        painter = painterResource(R.drawable.campus_ueb_banner),
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.matchParentSize()
