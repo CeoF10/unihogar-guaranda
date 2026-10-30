@@ -16,7 +16,9 @@ data class Property(
     var isFavorite: Boolean = false,
     val lat: Double = -1.591234,
     val lng: Double = -79.004567,
-    val photoCount: Int = 3
+    val photoCount: Int = 3,
+    val fotoUrls: List<String> = emptyList(),
+    val costos: com.example.unihogarguaranda.data.CostosResponse? = null
 )
 
 object MockData {

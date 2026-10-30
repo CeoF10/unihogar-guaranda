@@ -30,14 +30,21 @@ val studentOptions = listOf(
     ProfileOption(Icons.Default.HelpOutline, "Ayuda")
 )
 
+// Opciones exclusivas del propietario
+val ownerOnlyOptions = listOf(
+    ProfileOption(Icons.Default.Description, "Mi expediente")
+)
+
 @Composable
 fun FullProfileScreen(
     email: String,
     roleTitle: String,
-    onLogout: () -> Unit
+    onLogout: () -> Unit,
+    modifier: Modifier = Modifier,
+    onOptionClick: (String) -> Unit = {}
 ) {
     LazyColumn(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(BackgroundLight)
             .padding(20.dp),
@@ -112,13 +119,16 @@ fun FullProfileScreen(
         }
 
         // Opciones del menú
-        items(studentOptions) { option ->
+        // Opciones según el rol: "Mis publicaciones" y "Mi expediente" son solo de propietarios
+        val opciones = if (roleTitle == "Propietario") ownerOnlyOptions + studentOptions
+        else studentOptions.filter { it.title != "Mis publicaciones" }
+        items(opciones) { option ->
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = Color.White,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { /* Navegación */ },
+                    .clickable { onOptionClick(option.title) },
                 shadowElevation = 1.dp
             ) {
                 Row(

@@ -22,11 +22,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.unihogarguaranda.model.MockData
+import com.example.unihogarguaranda.data.ApiClient
+import com.example.unihogarguaranda.data.NuevoInmuebleRequest
+import com.example.unihogarguaranda.data.Session
+import com.example.unihogarguaranda.data.toProperty
+import com.example.unihogarguaranda.data.FiltroCatalogo
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import java.io.IOException
 import com.example.unihogarguaranda.model.Property
 import com.example.unihogarguaranda.ui.screens.FilterBottomSheet
 import com.example.unihogarguaranda.ui.screens.FullProfileScreen
 import com.example.unihogarguaranda.ui.screens.InteractiveMapScreen
+import com.example.unihogarguaranda.ui.screens.MessagesScreen
+import com.example.unihogarguaranda.R
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import com.example.unihogarguaranda.ui.screens.PropertyDetailScreen
 import com.example.unihogarguaranda.ui.theme.*
 
@@ -49,9 +63,73 @@ fun StudentHomeScreen(
     var selectedCategory by remember { mutableStateOf("hab") }
     var showFilterSheet by remember { mutableStateOf(false) }
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
+    var showMessages by remember { mutableStateOf(false) }
 
     // Catálogo de inmuebles verificados (datos semilla, alineados con init.sql)
-    var propertyList by remember { mutableStateOf(MockData.initialProperties) }
+    var propertyList by remember { mutableStateOf<List<Property>>(emptyList()) }
+    val scope = rememberCoroutineScope()
+
+    // RF06: filtros combinados que se envían a la API
+    var filtro by remember { mutableStateOf(FiltroCatalogo()) }
+    var sinResultados by remember { mutableStateOf<String?>(null) }
+    var totalCatalogo by remember { mutableStateOf(0) }
+    var paginaActual by remember { mutableStateOf(1) }
+    var favoritosIds by remember { mutableStateOf<Set<Long>>(emptySet()) }
+
+    suspend fun pedirPagina(pagina: Int) = ApiClient.service.getInmuebles(
+        tipo = filtro.tipo,
+        precioMin = filtro.precioMin,
+        precioMax = filtro.precioMax,
+        servicios = filtro.servicios.takeIf { it.isNotEmpty() }?.joinToString(","),
+        page = pagina
+    ).body()
+
+    // RF06: la siguiente página se pide solo cuando el usuario la necesita
+    fun cargarMas() {
+        scope.launch {
+            try {
+                val siguiente = pedirPagina(paginaActual + 1) ?: return@launch
+                paginaActual = siguiente.page
+                propertyList = propertyList + siguiente.items.map { it.toProperty(isFavorite = it.id in favoritosIds) }
+            } catch (e: IOException) {
+                Toast.makeText(context, "No se pudo cargar más", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // Catálogo real desde la API (solo inmuebles verificados) + favoritos del usuario
+    LaunchedEffect(filtro) {
+        try {
+            val pagina = pedirPagina(1)
+            val auth = Session.bearer(context)
+            favoritosIds = auth?.let { ApiClient.service.getFavoritos(it).body() }?.map { it.id }?.toSet() ?: emptySet()
+            propertyList = pagina?.items?.map { it.toProperty(isFavorite = it.id in favoritosIds) } ?: emptyList()
+            totalCatalogo = pagina?.total ?: 0
+            paginaActual = 1
+            sinResultados = pagina?.mensaje
+        } catch (e: IOException) {
+            Toast.makeText(context, "No se pudo cargar el catálogo. Verifique la API.", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    // Marca el favorito al instante y lo guarda en la API
+    fun setFavorite(prop: Property, value: Boolean) {
+        propertyList = propertyList.map { if (it.id == prop.id) it.copy(isFavorite = value) else it }
+        scope.launch {
+            val auth = Session.bearer(context) ?: return@launch
+            try {
+                if (value) ApiClient.service.addFavorito(auth, prop.id)
+                else ApiClient.service.removeFavorito(auth, prop.id)
+            } catch (e: IOException) {
+                Toast.makeText(context, "No se pudo guardar el favorito", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    if (showMessages) {
+        MessagesScreen(onBack = { showMessages = false })
+        return
+    }
 
     // Si está viendo el detalle de una vivienda
     if (selectedPropertyDetail != null) {
@@ -59,10 +137,8 @@ fun StudentHomeScreen(
             property = selectedPropertyDetail!!,
             onBack = { selectedPropertyDetail = null },
             onToggleFavorite = { prop ->
-                propertyList = propertyList.map {
-                    if (it.id == prop.id) it.copy(isFavorite = !it.isFavorite) else it
-                }
-                selectedPropertyDetail = selectedPropertyDetail?.copy(isFavorite = !selectedPropertyDetail!!.isFavorite)
+                setFavorite(prop, !prop.isFavorite)
+                selectedPropertyDetail = selectedPropertyDetail?.copy(isFavorite = !prop.isFavorite)
             },
             onContactOwner = { prop ->
                 Toast.makeText(context, "Abriendo WhatsApp con datos de: ${prop.title}", Toast.LENGTH_LONG).show()
@@ -75,7 +151,13 @@ fun StudentHomeScreen(
         FilterBottomSheet(
             onDismiss = { showFilterSheet = false },
             onApply = { minP, maxP, type, services ->
-                Toast.makeText(context, "Filtro aplicado: $$minP - $$maxP ($type)", Toast.LENGTH_SHORT).show()
+                filtro = FiltroCatalogo(
+                    precioMin = minP.toDouble(),
+                    precioMax = maxP.toDouble(),
+                    tipo = type,
+                    servicios = services.toList()
+                )
+                showFilterSheet = false
             }
         )
     }
@@ -92,19 +174,21 @@ fun StudentHomeScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Cerrar sesión",
-                            tint = RedUEB
-                        )
+                    IconButton(onClick = { showMessages = true }) {
+                        BadgedBox(badge = { Badge(containerColor = RedUEB) }) {
+                            Icon(
+                                imageVector = Icons.Default.NotificationsNone,
+                                contentDescription = "Notificaciones",
+                                tint = BlueUEB
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White, tonalElevation = 6.dp) {
+            NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
@@ -168,31 +252,35 @@ fun StudentHomeScreen(
                 onSelectCategory = { selectedCategory = it },
                 onFilterClick = { showFilterSheet = true },
                 onPropertyClick = { selectedPropertyDetail = it },
-                onToggleFavorite = { prop ->
-                    propertyList = propertyList.map {
-                        if (it.id == prop.id) it.copy(isFavorite = !it.isFavorite) else it
-                    }
-                }
+                onToggleFavorite = { prop -> setFavorite(prop, !prop.isFavorite) },
+                total = totalCatalogo,
+                emptyMessage = sinResultados,
+                onLoadMore = ::cargarMas
             )
             1 -> InteractiveMapScreen(
                 properties = propertyList,
                 onFilterClick = { showFilterSheet = true },
-                onPropertySelect = { selectedPropertyDetail = it }
+                onPropertySelect = { selectedPropertyDetail = it },
+                modifier = Modifier.padding(paddingValues)
             )
             2 -> FavoritesTabContent(
                 paddingValues = paddingValues,
                 properties = propertyList.filter { it.isFavorite },
                 onPropertyClick = { selectedPropertyDetail = it },
-                onRemoveFavorite = { prop ->
-                    propertyList = propertyList.map {
-                        if (it.id == prop.id) it.copy(isFavorite = false) else it
-                    }
-                }
+                onRemoveFavorite = { prop -> setFavorite(prop, false) }
             )
             3 -> FullProfileScreen(
                 email = studentEmail,
                 roleTitle = "Estudiante",
-                onLogout = onLogout
+                onLogout = onLogout,
+                modifier = Modifier.padding(paddingValues),
+                onOptionClick = { option ->
+                    when (option) {
+                        "Mensajes" -> showMessages = true
+                        "Mis favoritos" -> selectedTab = 2
+                        else -> Toast.makeText(context, "$option (próximamente)", Toast.LENGTH_SHORT).show()
+                    }
+                }
             )
         }
     }
@@ -206,7 +294,10 @@ fun StudentCatalogContent(
     onSelectCategory: (String) -> Unit,
     onFilterClick: () -> Unit,
     onPropertyClick: (Property) -> Unit,
-    onToggleFavorite: (Property) -> Unit
+    onToggleFavorite: (Property) -> Unit,
+    total: Int = properties.size,
+    emptyMessage: String? = null,
+    onLoadMore: (() -> Unit)? = null
 ) {
     LazyColumn(
         modifier = Modifier
@@ -289,38 +380,57 @@ fun StudentCatalogContent(
                 colors = CardDefaults.cardColors(containerColor = BlueUEB),
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    modifier = Modifier.padding(18.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "¡Encuentra tu hogar ideal!",
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Viviendas cerca de la UEB y en todo Guaranda.",
-                            color = Color(0xFFD1D5DB),
-                            fontSize = 12.sp
-                        )
-                    }
+                Box {
+                    Image(
+                        painter = painterResource(R.drawable.campus_ueb),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.matchParentSize()
+                    )
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(RedUEB),
-                        contentAlignment = Alignment.Center
+                            .matchParentSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    0f to BlueUEB,
+                                    0.55f to BlueUEB.copy(alpha = 0.75f),
+                                    1f to BlueUEB.copy(alpha = 0.15f)
+                                )
+                            )
+                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 26.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.ArrowForward,
-                            contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "¡Encuentra tu hogar ideal!",
+                                color = Color.White,
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Viviendas cerca de la UEB y en todo Guaranda.",
+                                color = Color(0xFFD1D5DB),
+                                fontSize = 12.sp
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(RedUEB),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ArrowForward,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -340,7 +450,7 @@ fun StudentCatalogContent(
                     color = TextPrimary
                 )
                 Text(
-                    text = "${properties.size} disponibles",
+                    text = "$total disponibles",
                     fontSize = 13.sp,
                     color = TextSecondary
                 )
@@ -379,7 +489,7 @@ fun StudentCatalogContent(
                         }
                         Spacer(modifier = Modifier.height(14.dp))
                         Text(
-                            text = "No hay inmuebles publicados aún",
+                            text = emptyMessage ?: "No hay inmuebles publicados aún",
                             fontWeight = FontWeight.Bold,
                             fontSize = 16.sp,
                             color = TextPrimary
@@ -529,6 +639,14 @@ fun StudentCatalogContent(
             }
         }
 
+        if (onLoadMore != null && properties.size < total) {
+            item {
+                OutlinedButton(onClick = onLoadMore, modifier = Modifier.fillMaxWidth()) {
+                    Text("Cargar más (${total - properties.size} restantes)")
+                }
+            }
+        }
+
         item { Spacer(modifier = Modifier.height(16.dp)) }
     }
 }
@@ -661,17 +779,47 @@ fun OwnerHomeScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableStateOf(0) }
     var showRegisterWizard by remember { mutableStateOf(false) }
     var hasSubmittedProperty by remember { mutableStateOf(false) }
+    var showMisPublicaciones by remember { mutableStateOf(false) }
+    var showMiExpediente by remember { mutableStateOf(false) }
+
+    if (showMiExpediente) {
+        MiExpedienteScreen(onBack = { showMiExpediente = false })
+        return
+    }
+
+    if (showMisPublicaciones) {
+        MisPublicacionesScreen(onBack = { showMisPublicaciones = false })
+        return
+    }
 
     if (showRegisterWizard) {
         com.example.unihogarguaranda.ui.screens.RegisterPropertyWizardScreen(
             onDismiss = { showRegisterWizard = false },
-            onPropertySubmitted = {
-                showRegisterWizard = false
-                hasSubmittedProperty = true
-                Toast.makeText(context, "Expediente del inmueble ingresado para Auditoría UEB", Toast.LENGTH_LONG).show()
+            onPropertySubmitted = { draft ->
+                scope.launch {
+                    val auth = Session.bearer(context) ?: return@launch
+                    try {
+                        val response = ApiClient.service.crearInmueble(auth, draft)
+                        if (response.isSuccessful) {
+                            showRegisterWizard = false
+                            hasSubmittedProperty = true
+                            Toast.makeText(
+                                context,
+                                "Borrador guardado. Suba las fotos y publíquelo en Mis publicaciones.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            val message = ApiClient.errorMessage(response.errorBody()?.string(), "No se pudo registrar el inmueble")
+                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                        }
+                    } catch (e: IOException) {
+                        Toast.makeText(context, "Sin conexión con la API UniHogar", Toast.LENGTH_LONG).show()
+                    }
+                }
             }
         )
         return
@@ -714,7 +862,7 @@ fun OwnerHomeScreen(
             }
         },
         bottomBar = {
-            NavigationBar(containerColor = Color.White) {
+            NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
@@ -895,7 +1043,13 @@ fun OwnerHomeScreen(
             FullProfileScreen(
                 email = ownerEmail,
                 roleTitle = "Propietario",
-                onLogout = onLogout
+                onLogout = onLogout,
+                modifier = Modifier.padding(paddingValues),
+                onOptionClick = { option ->
+                    if (option == "Mis publicaciones") showMisPublicaciones = true
+                    else if (option == "Mi expediente") showMiExpediente = true
+                    else Toast.makeText(context, "$option (próximamente)", Toast.LENGTH_SHORT).show()
+                }
             )
         }
     }

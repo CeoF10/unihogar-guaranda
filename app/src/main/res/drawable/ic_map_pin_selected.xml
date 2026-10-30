@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chincheta del inmueble seleccionado: más grande y con borde azul UEB -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="44dp" android:height="44dp"
+    android:viewportWidth="44" android:viewportHeight="44">
+    <path android:fillColor="#003366" android:pathData="M22,2A20,20 0,1 0,22,42A20,20 0,1 0,22,2Z"/>
+    <path android:fillColor="#B22234" android:pathData="M22,5A17,17 0,1 0,22,39A17,17 0,1 0,22,5Z"/>
+    <path android:fillColor="#FFFFFF" android:pathData="M22,12.5L12.5,20V31H19V25.5H25V31H31.5V20Z"/>
+</vector>

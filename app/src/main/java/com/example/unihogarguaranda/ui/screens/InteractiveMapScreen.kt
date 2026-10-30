@@ -1,6 +1,6 @@
 package com.example.unihogarguaranda.ui.screens
 
-import androidx.compose.foundation.Canvas
+import android.graphics.drawable.Drawable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,51 +13,94 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.example.unihogarguaranda.R
 import com.example.unihogarguaranda.model.Property
 import com.example.unihogarguaranda.ui.theme.*
+import org.osmdroid.config.Configuration
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
+import org.osmdroid.views.overlay.Marker
+
+// Centro de Guaranda (Plaza Roja) y campus de la UEB (Alpachaca)
+private val GUARANDA_CENTER = GeoPoint(-1.5921, -79.0035)
+private val UEB_CAMPUS = GeoPoint(-1.591234, -79.004567)
 
 @Composable
 fun InteractiveMapScreen(
     properties: List<Property>,
     onFilterClick: () -> Unit,
-    onPropertySelect: (Property) -> Unit
+    onPropertySelect: (Property) -> Unit,
+    modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var selectedProperty by remember { mutableStateOf(properties.firstOrNull()) }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(BackgroundLight)
     ) {
-        // Lienzo simulado del plano urbano de Guaranda y campus UEB
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            val w = size.width
-            val h = size.height
+        AndroidView(
+            modifier = Modifier.fillMaxSize(),
+            factory = { ctx ->
+                // OpenStreetMap bloquea user-agents genéricos; identificar la app con nombre propio
+                Configuration.getInstance().userAgentValue = "UniHogarGuaranda-Android/1.0"
+                MapView(ctx).apply {
+                    setTileSource(TileSourceFactory.MAPNIK)
+                    setMultiTouchControls(true)
+                    controller.setZoom(14.0)
+                    controller.setCenter(GUARANDA_CENTER)
+                }
+            },
+            update = { mapView ->
+                mapView.overlays.clear()
 
-            // Bloques simulados de calles y manzanas
-            drawLine(Color(0xFFE2E8F0), Offset(0f, h * 0.25f), Offset(w, h * 0.25f), strokeWidth = 14f)
-            drawLine(Color(0xFFE2E8F0), Offset(0f, h * 0.5f), Offset(w, h * 0.5f), strokeWidth = 16f)
-            drawLine(Color(0xFFE2E8F0), Offset(0f, h * 0.75f), Offset(w, h * 0.75f), strokeWidth = 14f)
+                // Marcador del campus UEB
+                mapView.overlays.add(Marker(mapView).apply {
+                    position = UEB_CAMPUS
+                    title = "Universidad Estatal de Bolívar (Campus Matriz)"
+                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    icon = ContextCompat.getDrawable(context, R.drawable.ic_map_campus)
+                })
 
-            drawLine(Color(0xFFE2E8F0), Offset(w * 0.3f, 0f), Offset(w * 0.3f, h), strokeWidth = 14f)
-            drawLine(Color(0xFFE2E8F0), Offset(w * 0.7f, 0f), Offset(w * 0.7f, h), strokeWidth = 16f)
-            drawLine(Color(0xFFCBD5E1), Offset(w * 0.5f, 0f), Offset(w * 0.5f, h), strokeWidth = 20f) // Av. Principal
-        }
+                // Un marcador por cada inmueble; el seleccionado va resaltado
+                properties.forEach { prop ->
+                    val isSelected = selectedProperty?.id == prop.id
+                    mapView.overlays.add(Marker(mapView).apply {
+                        position = GeoPoint(prop.lat, prop.lng)
+                        title = prop.title
+                        snippet = "$${prop.price.toInt()} / mes"
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        icon = ContextCompat.getDrawable(
+                            context,
+                            if (isSelected) R.drawable.ic_map_pin_selected else R.drawable.ic_map_pin
+                        )
+                        setOnMarkerClickListener { _, _ ->
+                            selectedProperty = prop
+                            true
+                        }
+                    })
+                }
+                mapView.invalidate()
+            }
+        )
 
-        // Campus de la Universidad Estatal de Bolívar
+        // Chip superior con la ciudad (en el diseño: "Guaranda, Bolívar")
         Surface(
             shape = RoundedCornerShape(12.dp),
             color = Color.White.copy(alpha = 0.95f),
             shadowElevation = 2.dp,
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .padding(top = 70.dp)
+                .padding(top = 72.dp)
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
@@ -76,77 +119,6 @@ fun InteractiveMapScreen(
                     fontSize = 12.sp,
                     color = BlueUEB
                 )
-            }
-        }
-
-        // Marcadores de casas en el mapa
-        val markerOffsets = listOf(
-            Alignment.TopStart to Pair(50.dp, 160.dp),
-            Alignment.TopEnd to Pair(70.dp, 190.dp),
-            Alignment.CenterStart to Pair(60.dp, 0.dp),
-            Alignment.Center to Pair(0.dp, (-30).dp),
-            Alignment.BottomEnd to Pair(80.dp, 240.dp)
-        )
-
-        properties.forEachIndexed { index, prop ->
-            val position = markerOffsets.getOrElse(index) { Alignment.Center to Pair(0.dp, 0.dp) }
-            val isSelected = selectedProperty?.id == prop.id
-
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(
-                        start = if (position.first == Alignment.TopStart || position.first == Alignment.CenterStart) position.second.first else 0.dp,
-                        end = if (position.first == Alignment.TopEnd || position.first == Alignment.BottomEnd) position.second.first else 0.dp,
-                        top = if (position.first == Alignment.TopStart || position.first == Alignment.TopEnd) position.second.second else 0.dp,
-                        bottom = if (position.first == Alignment.BottomEnd) position.second.second else 0.dp
-                    ),
-                contentAlignment = position.first
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.clickable { selectedProperty = prop }
-                ) {
-                    if (isSelected) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = BlueUEB,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        ) {
-                            Text(
-                                "A ${prop.campusDistance}",
-                                color = Color.White,
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .size(if (isSelected) 44.dp else 36.dp)
-                            .clip(CircleShape)
-                            .background(if (isSelected) RedUEB else Color.White)
-                            .padding(2.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .clip(CircleShape)
-                                .background(if (isSelected) RedUEB else RedUEB.copy(alpha = 0.1f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = null,
-                                tint = if (isSelected) Color.White else RedUEB,
-                                modifier = Modifier.size(if (isSelected) 18.dp else 14.dp)
-                            )
-                        }
-                    }
-                }
             }
         }
 

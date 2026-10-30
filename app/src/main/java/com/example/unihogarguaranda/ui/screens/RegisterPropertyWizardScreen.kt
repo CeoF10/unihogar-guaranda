@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unihogarguaranda.ui.theme.*
 import androidx.core.content.ContextCompat
+import com.example.unihogarguaranda.data.CargoResponse
+import com.example.unihogarguaranda.data.NuevoInmuebleRequest
+import com.example.unihogarguaranda.ui.components.LocationPickerMap
 import com.example.unihogarguaranda.util.GpsLocationProvider
 import com.example.unihogarguaranda.util.GpsResult
 import com.example.unihogarguaranda.util.GuarandaGeofenceValidator
@@ -42,7 +45,7 @@ import com.example.unihogarguaranda.util.GuarandaGeofenceValidator
 @Composable
 fun RegisterPropertyWizardScreen(
     onDismiss: () -> Unit,
-    onPropertySubmitted: () -> Unit
+    onPropertySubmitted: (NuevoInmuebleRequest) -> Unit
 ) {
     var currentStep by remember { mutableStateOf(1) }
 
@@ -54,6 +57,10 @@ fun RegisterPropertyWizardScreen(
     var gpsLongitude by remember { mutableStateOf<Double?>(null) }
     var isGpsValid by remember { mutableStateOf(false) }
     var gpsAccuracy by remember { mutableStateOf<Float?>(null) }
+    var ubicacionManual by remember { mutableStateOf(false) }
+    var showMapPicker by remember { mutableStateOf(false) }
+    var deposit by remember { mutableStateOf("0") }
+    var cargosTexto by remember { mutableStateOf("") }
     var isCapturingGps by remember { mutableStateOf(false) }
 
     // Paso 2: Catastro y Documento
@@ -82,6 +89,7 @@ fun RegisterPropertyWizardScreen(
                     gpsLatitude = result.latitude
                     gpsLongitude = result.longitude
                     gpsAccuracy = result.accuracyMeters
+                    ubicacionManual = false
                     isGpsValid = GuarandaGeofenceValidator.isWithinGuaranda(result.latitude, result.longitude)
                     if (!isGpsValid) {
                         val km = GuarandaGeofenceValidator.calculateDistanceKm(result.latitude, result.longitude)
@@ -207,24 +215,46 @@ fun RegisterPropertyWizardScreen(
                     colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
                 )
 
+                // Solo los tipos que acepta la API
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf("Habitación", "Departamento", "Casa").forEach { tipo ->
+                        FilterChip(
+                            selected = propertyType == tipo,
+                            onClick = { propertyType = tipo },
+                            label = { Text(tipo) }
+                        )
+                    }
+                }
+
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
-                        value = propertyType,
-                        onValueChange = { propertyType = it },
-                        label = { Text("Tipo") },
+                        value = monthlyPrice,
+                        onValueChange = { monthlyPrice = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Arriendo ($/mes)") },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
                     )
                     OutlinedTextField(
-                        value = monthlyPrice,
-                        onValueChange = { monthlyPrice = it },
-                        label = { Text("Canon ($/mes)") },
+                        value = deposit,
+                        onValueChange = { deposit = it.filter { c -> c.isDigit() || c == '.' } },
+                        label = { Text("Depósito ($)") },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
                     )
                 }
+
+                // RF08: cargos recurrentes; "?" marca un cargo cuyo monto aún no se conoce
+                OutlinedTextField(
+                    value = cargosTexto,
+                    onValueChange = { cargosTexto = it },
+                    label = { Text("Cargos mensuales (opcional)") },
+                    placeholder = { Text("ej. Agua=5, Internet=?") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(focusedContainerColor = Color.White, unfocusedContainerColor = Color.White)
+                )
 
                 // Tarjeta de captura GPS
                 Card(
@@ -253,7 +283,8 @@ fun RegisterPropertyWizardScreen(
                         if (gpsLatitude != null) {
                             Spacer(modifier = Modifier.height(6.dp))
                             Text(
-                                text = "Coordenadas: Lat %.6f, Lng %.6f (±%d m)".format(gpsLatitude, gpsLongitude, gpsAccuracy?.toInt() ?: 0),
+                                text = if (ubicacionManual) "Marcado en el mapa: Lat %.6f, Lng %.6f".format(gpsLatitude, gpsLongitude)
+                                else "Coordenadas: Lat %.6f, Lng %.6f (±%d m)".format(gpsLatitude, gpsLongitude, gpsAccuracy?.toInt() ?: 0),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = if (isGpsValid) Color(0xFF047857) else RedUEB
@@ -290,6 +321,36 @@ fun RegisterPropertyWizardScreen(
                                     isGpsValid -> "Coordenadas Verificadas · Volver a capturar"
                                     else -> "Capturar Coordenadas GPS del Inmueble"
                                 }
+                            )
+                        }
+
+                        // RF07: alternativa sin GPS, tocando el mapa
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { showMapPicker = !showMapPicker },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(10.dp)
+                        ) {
+                            Text(if (showMapPicker) "Ocultar mapa" else "Marcar ubicación en el mapa (sin GPS)")
+                        }
+                        if (showMapPicker) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text("Toque el mapa donde está el inmueble.", fontSize = 11.sp, color = TextSecondary)
+                            LocationPickerMap(
+                                latitude = gpsLatitude,
+                                longitude = gpsLongitude,
+                                onPick = { lat, lng ->
+                                    gpsLatitude = lat
+                                    gpsLongitude = lng
+                                    gpsAccuracy = null
+                                    ubicacionManual = true
+                                    isGpsValid = GuarandaGeofenceValidator.isWithinGuaranda(lat, lng)
+                                    errorMessage = if (isGpsValid) null
+                                    else "Ese punto está fuera de Guaranda. Solo se aceptan inmuebles dentro de 15 km."
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(260.dp)
                             )
                         }
                     }
@@ -546,7 +607,23 @@ fun RegisterPropertyWizardScreen(
                                 if (!isOwnershipDeclared) {
                                     errorMessage = "Debe aceptar la declaración juramentada de titularidad."
                                 } else {
-                                    onPropertySubmitted()
+                                    onPropertySubmitted(
+                                        NuevoInmuebleRequest(
+                                            titulo = "$propertyType · ${address.trim()}".take(120),
+                                            tipo = propertyType,
+                                            direccion = address.trim(),
+                                            descripcion = "Clave catastral: $cadastralCode",
+                                            precio = monthlyPrice.toDoubleOrNull() ?: 0.0,
+                                            deposito = deposit.toDoubleOrNull() ?: 0.0,
+                                            dormitorios = 1,
+                                            servicios = emptyList(),
+                                            lat = gpsLatitude ?: 0.0,
+                                            lng = gpsLongitude ?: 0.0,
+                                            precisionGpsM = gpsAccuracy?.toDouble(),
+                                            origen = if (ubicacionManual) "MANUAL" else "GPS",
+                                            cargos = parsearCargos(cargosTexto)
+                                        )
+                                    )
                                 }
                             }
                         }
@@ -561,3 +638,15 @@ fun RegisterPropertyWizardScreen(
         }
     }
 }
+
+// "Agua=5, Internet=?" -> [Agua: 5, Internet: desconocido]
+private fun parsearCargos(texto: String): List<CargoResponse> =
+    texto.split(",")
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .map { parte ->
+            val nombre = parte.substringBefore("=").trim()
+            val monto = parte.substringAfter("=", "").trim().toDoubleOrNull()
+            CargoResponse(nombre = nombre, monto = monto)
+        }
+        .filter { it.nombre.isNotEmpty() }
