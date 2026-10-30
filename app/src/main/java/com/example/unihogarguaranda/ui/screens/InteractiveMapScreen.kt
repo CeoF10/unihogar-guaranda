@@ -172,7 +172,7 @@ fun InteractiveMapScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column {
+                        Column(modifier = Modifier.weight(1f).padding(end = 8.dp)) {
                             Text(
                                 text = prop.title,
                                 fontWeight = FontWeight.Bold,
@@ -187,6 +187,8 @@ fun InteractiveMapScreen(
                         }
                         Text(
                             text = "$${prop.price.toInt()} / mes",
+                            maxLines = 1,
+                            softWrap = false,
                             fontWeight = FontWeight.Black,
                             fontSize = 17.sp,
                             color = RedUEB
