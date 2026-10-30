@@ -30,6 +30,14 @@ import com.example.unihogarguaranda.data.FiltroCatalogo
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import coil3.compose.AsyncImage
+import androidx.compose.ui.text.style.TextOverflow
 import java.io.IOException
 import com.example.unihogarguaranda.model.Property
 import com.example.unihogarguaranda.ui.screens.FilterBottomSheet
@@ -47,9 +55,9 @@ import com.example.unihogarguaranda.ui.theme.*
 data class CategoryItem(val id: String, val title: String, val color: Color, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 val showcaseCategories = listOf(
-    CategoryItem("hab", "Habitaciones", RedUEB, Icons.Default.Bed),
-    CategoryItem("dep", "Departamentos", BlueUEB, Icons.Default.Apartment),
-    CategoryItem("cas", "Casas", Color(0xFF10B981), Icons.Default.Home)
+    CategoryItem("Habitación", "Habitaciones", RedUEB, Icons.Default.Bed),
+    CategoryItem("Departamento", "Departamentos", BlueUEB, Icons.Default.Apartment),
+    CategoryItem("Casa", "Casas", Color(0xFF10B981), Icons.Default.Home)
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -60,7 +68,7 @@ fun StudentHomeScreen(
 ) {
     val context = LocalContext.current
     var selectedTab by remember { mutableStateOf(0) }
-    var selectedCategory by remember { mutableStateOf("hab") }
+    var searchText by remember { mutableStateOf("") }
     var showFilterSheet by remember { mutableStateOf(false) }
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
     var showMessages by remember { mutableStateOf(false) }
@@ -81,8 +89,16 @@ fun StudentHomeScreen(
         precioMin = filtro.precioMin,
         precioMax = filtro.precioMax,
         servicios = filtro.servicios.takeIf { it.isNotEmpty() }?.joinToString(","),
+        distanciaMaxKm = filtro.distanciaMaxKm,
+        q = filtro.texto,
         page = pagina
     ).body()
+
+    // Buscador: espera a que el usuario deje de escribir antes de consultar la API
+    LaunchedEffect(searchText) {
+        delay(400)
+        filtro = filtro.copy(texto = searchText.trim().ifEmpty { null })
+    }
 
     // RF06: la siguiente página se pide solo cuando el usuario la necesita
     fun cargarMas() {
@@ -140,23 +156,17 @@ fun StudentHomeScreen(
                 setFavorite(prop, !prop.isFavorite)
                 selectedPropertyDetail = selectedPropertyDetail?.copy(isFavorite = !prop.isFavorite)
             },
-            onContactOwner = { prop ->
-                Toast.makeText(context, "Abriendo WhatsApp con datos de: ${prop.title}", Toast.LENGTH_LONG).show()
-            }
+            onContactOwner = { prop -> contactarPropietario(context, prop) }
         )
         return
     }
 
     if (showFilterSheet) {
         FilterBottomSheet(
+            filtroActual = filtro,
             onDismiss = { showFilterSheet = false },
-            onApply = { minP, maxP, type, services ->
-                filtro = FiltroCatalogo(
-                    precioMin = minP.toDouble(),
-                    precioMax = maxP.toDouble(),
-                    tipo = type,
-                    servicios = services.toList()
-                )
+            onApply = { nuevo ->
+                filtro = nuevo
                 showFilterSheet = false
             }
         )
@@ -248,8 +258,13 @@ fun StudentHomeScreen(
             0 -> StudentCatalogContent(
                 paddingValues = paddingValues,
                 properties = propertyList,
-                selectedCategory = selectedCategory,
-                onSelectCategory = { selectedCategory = it },
+                searchText = searchText,
+                onSearchChange = { searchText = it },
+                selectedType = filtro.tipo,
+                onSelectType = { tipo -> filtro = filtro.copy(tipo = if (filtro.tipo == tipo) null else tipo) },
+                activeFilters = filtro.activos,
+                onClearFilters = { filtro = FiltroCatalogo(texto = filtro.texto) },
+                onBannerClick = { selectedTab = 1 },
                 onFilterClick = { showFilterSheet = true },
                 onPropertyClick = { selectedPropertyDetail = it },
                 onToggleFavorite = { prop -> setFavorite(prop, !prop.isFavorite) },
@@ -290,8 +305,13 @@ fun StudentHomeScreen(
 fun StudentCatalogContent(
     paddingValues: PaddingValues,
     properties: List<Property>,
-    selectedCategory: String,
-    onSelectCategory: (String) -> Unit,
+    searchText: String,
+    onSearchChange: (String) -> Unit,
+    selectedType: String?,
+    onSelectType: (String) -> Unit,
+    activeFilters: Int,
+    onClearFilters: () -> Unit,
+    onBannerClick: () -> Unit,
     onFilterClick: () -> Unit,
     onPropertyClick: (Property) -> Unit,
     onToggleFavorite: (Property) -> Unit,
@@ -313,21 +333,46 @@ fun StudentCatalogContent(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Surface(
+                OutlinedTextField(
+                    value = searchText,
+                    onValueChange = onSearchChange,
+                    placeholder = { Text("Buscar por zona o nombre...", fontSize = 14.sp) },
+                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
+                    trailingIcon = if (searchText.isNotEmpty()) {
+                        {
+                            IconButton(onClick = { onSearchChange("") }) {
+                                Icon(Icons.Default.Close, contentDescription = "Borrar búsqueda", tint = TextSecondary)
+                            }
+                        }
+                    } else null,
+                    singleLine = true,
                     shape = RoundedCornerShape(24.dp),
-                    color = Color.White,
-                    shadowElevation = 1.dp,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clickable { onFilterClick() }
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        unfocusedBorderColor = DividerColor,
+                        focusedBorderColor = BlueUEB
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                BadgedBox(
+                    badge = {
+                        if (activeFilters > 0) Badge(containerColor = RedUEB) { Text("$activeFilters") }
+                    }
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                    IconButton(
+                        onClick = onFilterClick,
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(CircleShape)
+                            .background(if (activeFilters > 0) BlueUEB else Color.White)
                     ) {
-                        Icon(Icons.Default.Search, contentDescription = "Buscar", tint = TextSecondary)
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Text("Buscar por zona, precio o tipo...", color = TextSecondary, fontSize = 14.sp)
+                        Icon(
+                            Icons.Default.Tune,
+                            contentDescription = "Filtros",
+                            tint = if (activeFilters > 0) Color.White else BlueUEB
+                        )
                     }
                 }
             }
@@ -340,18 +385,20 @@ fun StudentCatalogContent(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 showcaseCategories.forEach { category ->
-                    val isSelected = selectedCategory == category.id
+                    val isSelected = selectedType == category.id
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         modifier = Modifier
-                            .clickable { onSelectCategory(category.id) }
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { onSelectType(category.id) }
                             .padding(horizontal = 8.dp)
                     ) {
                         Box(
                             modifier = Modifier
                                 .size(64.dp)
                                 .clip(RoundedCornerShape(18.dp))
-                                .background(category.color),
+                                // Sin selección todas se ven activas; con selección se atenúan las demás
+                                .background(if (selectedType == null || isSelected) category.color else category.color.copy(alpha = 0.25f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
@@ -378,7 +425,9 @@ fun StudentCatalogContent(
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = BlueUEB),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onBannerClick() }
             ) {
                 Box {
                     Image(
@@ -412,7 +461,7 @@ fun StudentCatalogContent(
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Viviendas cerca de la UEB y en todo Guaranda.",
+                                text = "Mira en el mapa las viviendas cerca de la UEB.",
                                 color = Color(0xFFD1D5DB),
                                 fontSize = 12.sp
                             )
@@ -507,136 +556,24 @@ fun StudentCatalogContent(
             }
         }
 
-        // Listado de Tarjetas Inmobiliarias
-        items(properties) { property ->
-            Card(
-                shape = RoundedCornerShape(18.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { onPropertyClick(property) }
-            ) {
-                Column {
-                    // Contenedor visual del inmueble
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(150.dp)
-                            .background(Color(0xFFE2E8F0)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                imageVector = Icons.Default.Home,
-                                contentDescription = null,
-                                tint = TextSecondary,
-                                modifier = Modifier.size(42.dp)
-                            )
-                            Text(
-                                "Vista del Inmueble",
-                                fontSize = 12.sp,
-                                color = TextSecondary,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        if (property.isFeatured) {
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = RedUEB,
-                                modifier = Modifier
-                                    .align(Alignment.TopStart)
-                                    .padding(12.dp)
-                            ) {
-                                Text(
-                                    text = "Destacado",
-                                    color = Color.White,
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-
-                        // Botón de Favorito
-                        IconButton(
-                            onClick = { onToggleFavorite(property) },
-                            modifier = Modifier
-                                .align(Alignment.TopEnd)
-                                .padding(12.dp)
-                                .size(34.dp)
-                                .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.9f))
-                        ) {
-                            Icon(
-                                imageVector = if (property.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                contentDescription = "Favorito",
-                                tint = RedUEB,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                    }
-
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(
-                            text = property.title,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = TextPrimary
-                        )
-                        Text(
-                            text = property.location,
-                            fontSize = 12.sp,
-                            color = TextSecondary
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "${property.beds} hab. · ${property.baths} · ${property.services.firstOrNull() ?: "Servicios"}",
-                            fontSize = 12.sp,
-                            color = BlueUEB
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Row(verticalAlignment = Alignment.Bottom) {
-                                Text(
-                                    text = "$${property.price.toInt()}",
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Black,
-                                    color = BlueUEB
-                                )
-                                Text(
-                                    text = " / mes",
-                                    fontSize = 12.sp,
-                                    color = TextSecondary,
-                                    modifier = Modifier.padding(bottom = 2.dp)
-                                )
-                            }
-
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(
-                                    imageVector = Icons.Default.LocationOn,
-                                    contentDescription = null,
-                                    tint = RedUEB,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                                Spacer(modifier = Modifier.width(3.dp))
-                                Text(
-                                    text = property.campusDistance,
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = TextSecondary
-                                )
-                            }
-                        }
-                    }
-                }
+        // Filtros activos con opción de limpiarlos
+        if (activeFilters > 0) {
+            item {
+                AssistChip(
+                    onClick = onClearFilters,
+                    label = { Text("$activeFilters filtro(s) activo(s) · Limpiar") },
+                    leadingIcon = { Icon(Icons.Default.Close, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                )
             }
+        }
+
+        // Listado de tarjetas
+        items(properties, key = { it.id }) { property ->
+            PropertyCard(
+                property = property,
+                onClick = { onPropertyClick(property) },
+                onToggleFavorite = { onToggleFavorite(property) }
+            )
         }
 
         if (onLoadMore != null && properties.size < total) {
@@ -673,7 +610,7 @@ fun FavoritesTabContent(
                 color = TextPrimary
             )
             Text(
-                text = "${properties.size} alojamientos guardados",
+                text = if (properties.size == 1) "1 alojamiento guardado" else "${properties.size} alojamientos guardados",
                 fontSize = 13.sp,
                 color = TextSecondary
             )
@@ -718,12 +655,7 @@ fun FavoritesTabContent(
                             .background(Color(0xFFE2E8F0)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Home,
-                            contentDescription = null,
-                            tint = TextSecondary,
-                            modifier = Modifier.size(32.dp)
-                        )
+                        FotoInmueble(property, iconSize = 32)
                     }
 
                     Spacer(modifier = Modifier.width(14.dp))
@@ -1052,5 +984,203 @@ fun OwnerHomeScreen(
                 }
             )
         }
+    }
+}
+
+// Foto principal del inmueble o un marcador si todavía no tiene fotos
+@Composable
+fun FotoInmueble(property: Property, iconSize: Int = 42) {
+    if (property.fotoUrls.isNotEmpty()) {
+        AsyncImage(
+            model = property.fotoUrls.first(),
+            contentDescription = property.title,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(listOf(Color(0xFFE8EEF7), Color(0xFFD5DFEC)))
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = when (property.type) {
+                    "Habitación" -> Icons.Default.Bed
+                    "Departamento" -> Icons.Default.Apartment
+                    else -> Icons.Default.Home
+                },
+                contentDescription = null,
+                tint = BlueUEB.copy(alpha = 0.45f),
+                modifier = Modifier.size(iconSize.dp)
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+    ) {
+        Column {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(170.dp)
+            ) {
+                FotoInmueble(property)
+
+                // Etiquetas sobre la foto: tipo y verificación
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Surface(shape = RoundedCornerShape(8.dp), color = BlueUEB) {
+                        Text(
+                            property.type,
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF047857)) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(Icons.Default.Verified, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Text("Verificado UEB", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+
+                IconButton(
+                    onClick = onToggleFavorite,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(10.dp)
+                        .size(38.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.95f))
+                ) {
+                    Icon(
+                        imageVector = if (property.isFavorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = if (property.isFavorite) "Quitar de favoritos" else "Guardar en favoritos",
+                        tint = RedUEB,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+
+                if (property.fotoUrls.size > 1) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = Color.Black.copy(alpha = 0.55f),
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(10.dp)
+                    ) {
+                        Text(
+                            "${property.fotoUrls.size} fotos",
+                            color = Color.White,
+                            fontSize = 11.sp,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
+                }
+            }
+
+            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    text = property.title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = TextPrimary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null, tint = RedUEB, modifier = Modifier.size(14.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
+                    Text(
+                        text = listOf(property.location, property.campusDistance.takeIf { it.isNotEmpty() }?.let { "$it del campus" })
+                            .filterNotNull()
+                            .filter { it.isNotEmpty() }
+                            .joinToString(" · "),
+                        fontSize = 12.sp,
+                        color = TextSecondary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    (listOf("${property.beds} hab.") + property.services.take(3)).forEach { etiqueta ->
+                        Surface(shape = RoundedCornerShape(8.dp), color = ChipBackground) {
+                            Text(
+                                etiqueta,
+                                fontSize = 11.sp,
+                                color = BlueUEB,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    if (property.services.size > 3) {
+                        Text("+${property.services.size - 3}", fontSize = 11.sp, color = TextSecondary,
+                            modifier = Modifier.padding(vertical = 4.dp))
+                    }
+                }
+
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = "$${property.price.toInt()}",
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Black,
+                        color = BlueUEB
+                    )
+                    Text(" / mes", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 3.dp))
+                    Spacer(modifier = Modifier.weight(1f))
+                    property.costos?.let { costos ->
+                        Text(
+                            text = costos.totalMensual?.let { "Total $${it.toInt()}" } ?: "Total por confirmar",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (costos.totalMensual == null) RedUEB else TextSecondary,
+                            modifier = Modifier.padding(bottom = 3.dp)
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+// RF12 básico: abre WhatsApp con un mensaje sobre el anuncio; si no hay WhatsApp, abre el marcador
+fun contactarPropietario(context: Context, property: Property) {
+    val telefono = property.contact?.filter { it.isDigit() }
+    if (telefono.isNullOrEmpty()) {
+        Toast.makeText(context, "Este anuncio no tiene un contacto registrado", Toast.LENGTH_SHORT).show()
+        return
+    }
+    // Números de Ecuador: 09XXXXXXXX -> 5939XXXXXXXX
+    val internacional = if (telefono.startsWith("0")) "593" + telefono.drop(1) else telefono
+    val mensaje = Uri.encode("Hola, vi su anuncio \"${property.title}\" en UniHogar Guaranda. ¿Sigue disponible?")
+    val whatsapp = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$internacional?text=$mensaje"))
+    try {
+        context.startActivity(whatsapp)
+    } catch (e: android.content.ActivityNotFoundException) {
+        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$telefono")))
     }
 }

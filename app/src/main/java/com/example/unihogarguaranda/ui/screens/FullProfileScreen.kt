@@ -10,7 +10,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
+import com.example.unihogarguaranda.data.ApiClient
+import com.example.unihogarguaranda.data.EmailRequest
+import kotlinx.coroutines.launch
+import java.io.IOException
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +47,54 @@ fun FullProfileScreen(
     modifier: Modifier = Modifier,
     onOptionClick: (String) -> Unit = {}
 ) {
+    val scope = rememberCoroutineScope()
+    var dialogo by remember { mutableStateOf<String?>(null) }
+    var mensajeClave by remember { mutableStateOf<String?>(null) }
+
+    when (dialogo) {
+        "Configuración" -> AlertDialog(
+            onDismissRequest = { dialogo = null; mensajeClave = null },
+            title = { Text("Configuración", fontWeight = FontWeight.Bold, color = BlueUEB) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Cuenta: $email", fontSize = 14.sp)
+                    Text("Rol: $roleTitle", fontSize = 14.sp)
+                    Text(
+                        mensajeClave ?: "Para cambiar su contraseña le enviaremos un enlace temporal a su correo.",
+                        fontSize = 13.sp,
+                        color = TextSecondary
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        mensajeClave = try {
+                            ApiClient.service.recuperarClave(EmailRequest(email)).body()?.mensaje
+                                ?: "No se pudo enviar el enlace."
+                        } catch (e: IOException) {
+                            "Sin conexión con el servidor UniHogar."
+                        }
+                    }
+                }) { Text("Cambiar contraseña") }
+            },
+            dismissButton = { TextButton(onClick = { dialogo = null; mensajeClave = null }) { Text("Cerrar") } }
+        )
+        "Ayuda" -> AlertDialog(
+            onDismissRequest = { dialogo = null },
+            title = { Text("Ayuda", fontWeight = FontWeight.Bold, color = BlueUEB) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("• Busque por zona o nombre y use los filtros de precio, tipo, servicios y distancia.", fontSize = 13.sp)
+                    Text("• Toque el corazón para guardar una vivienda en Favoritos.", fontSize = 13.sp)
+                    Text("• Solo se muestran viviendas verificadas por Bienestar Estudiantil UEB.", fontSize = 13.sp)
+                    Text("• Propietarios: registren el inmueble, suban fotos y su expediente, y publíquenlo desde Mis publicaciones.", fontSize = 13.sp)
+                    Text("¿Algún problema con un anuncio? Escriba a Bienestar Estudiantil de la UEB.", fontSize = 13.sp, color = TextSecondary)
+                }
+            },
+            confirmButton = { TextButton(onClick = { dialogo = null }) { Text("Entendido") } }
+        )
+    }
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
@@ -128,7 +180,10 @@ fun FullProfileScreen(
                 color = Color.White,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onOptionClick(option.title) },
+                    .clickable {
+                        if (option.title == "Ayuda" || option.title == "Configuración") dialogo = option.title
+                        else onOptionClick(option.title)
+                    },
                 shadowElevation = 1.dp
             ) {
                 Row(

@@ -34,6 +34,7 @@ interface ApiService {
         @Query("precioMax") precioMax: Double? = null,
         @Query("servicios") servicios: String? = null,
         @Query("distanciaMaxKm") distanciaMaxKm: Double? = null,
+        @Query("q") q: String? = null,
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 20
     ): Response<InmueblesPage>

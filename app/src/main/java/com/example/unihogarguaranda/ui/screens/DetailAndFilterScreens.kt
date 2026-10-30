@@ -24,19 +24,24 @@ import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.unihogarguaranda.data.FiltroCatalogo
 import com.example.unihogarguaranda.model.Property
 import com.example.unihogarguaranda.ui.theme.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun FilterBottomSheet(
+    filtroActual: FiltroCatalogo,
     onDismiss: () -> Unit,
-    onApply: (minPrice: Float, maxPrice: Float, type: String?, services: Set<String>) -> Unit
+    onApply: (FiltroCatalogo) -> Unit
 ) {
-    var priceRange by remember { mutableStateOf(100f..500f) }
-    var selectedType by remember { mutableStateOf("Habitación") }
-    val services = remember { mutableStateMapOf("WiFi" to true, "Agua" to true, "Luz" to true, "Lavadora" to false, "Amoblado" to false) }
-    var distanceSelection by remember { mutableStateOf("Cualquiera") }
+    // RF06: la hoja abre con los filtros que ya están aplicados
+    var priceRange by remember {
+        mutableStateOf((filtroActual.precioMin?.toFloat() ?: PRECIO_MIN)..(filtroActual.precioMax?.toFloat() ?: PRECIO_MAX))
+    }
+    var selectedType by remember { mutableStateOf(filtroActual.tipo) }
+    val services = remember { mutableStateListOf<String>().apply { addAll(filtroActual.servicios) } }
+    var distancia by remember { mutableStateOf(filtroActual.distanciaMaxKm) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -46,178 +51,122 @@ fun FilterBottomSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 32.dp)
-                .verticalScroll(rememberScrollState()),
+                .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
-            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Filtros",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
+                Text("Filtros", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = BlueUEB)
                 IconButton(onClick = onDismiss) {
                     Icon(Icons.Default.Close, contentDescription = "Cerrar", tint = TextSecondary)
                 }
             }
 
-            // Precio mensual
             Column {
+                Text("Precio mensual", fontWeight = FontWeight.SemiBold, color = TextPrimary)
                 Text(
-                    text = "Precio mensual",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "$${priceRange.start.toInt()} - $${priceRange.endInclusive.toInt()}",
-                    fontSize = 17.sp,
+                    text = "$${priceRange.start.toInt()} - $${priceRange.endInclusive.toInt()}" +
+                        if (priceRange.endInclusive >= PRECIO_MAX) " o más" else "",
+                    fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = BlueUEB
                 )
                 RangeSlider(
                     value = priceRange,
                     onValueChange = { priceRange = it },
-                    valueRange = 50f..600f,
-                    colors = SliderDefaults.colors(
-                        thumbColor = RedUEB,
-                        activeTrackColor = RedUEB,
-                        inactiveTrackColor = DividerColor
-                    )
+                    valueRange = PRECIO_MIN..PRECIO_MAX,
+                    steps = 10,
+                    colors = SliderDefaults.colors(thumbColor = RedUEB, activeTrackColor = RedUEB)
                 )
             }
 
-            // Tipo de vivienda
-            Column {
-                Text(
-                    text = "Tipo de vivienda",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(10.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    listOf("Habitación", "Departamento", "Casa").forEach { type ->
-                        val isSelected = selectedType == type
-                        Box(
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (isSelected) RedUEB else ChipBackground)
-                                .clickable { selectedType = type }
-                                .padding(vertical = 10.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = type,
-                                fontSize = 12.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) Color.White else TextPrimary
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Servicios
-            Column {
-                Text(
-                    text = "Servicios",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                listOf("WiFi", "Agua", "Luz", "Lavadora", "Amoblado").forEach { s ->
-                    val checked = services[s] ?: false
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { services[s] = !checked }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Checkbox(
-                            checked = checked,
-                            onCheckedChange = { services[s] = it },
-                            colors = CheckboxDefaults.colors(
-                                checkedColor = RedUEB,
-                                uncheckedColor = TextSecondary
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Tipo de vivienda", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    (listOf<String?>(null) + TIPOS_VIVIENDA).forEach { tipo ->
+                        FilterChip(
+                            selected = selectedType == tipo,
+                            onClick = { selectedType = tipo },
+                            label = { Text(tipo ?: "Todos") },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = RedUEB,
+                                selectedLabelColor = Color.White
                             )
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(s, fontSize = 14.sp, color = TextPrimary)
                     }
                 }
             }
 
-            // Distancia al campus
-            Column {
-                Text(
-                    text = "Distancia al campus",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = TextPrimary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = ChipBackground,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(distanceSelection, fontSize = 14.sp, color = TextPrimary)
-                        Text("▼", fontSize = 11.sp, color = TextSecondary)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Servicios", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SERVICIOS.forEach { servicio ->
+                        val marcado = servicio in services
+                        FilterChip(
+                            selected = marcado,
+                            onClick = { if (marcado) services.remove(servicio) else services.add(servicio) },
+                            label = { Text(servicio) },
+                            leadingIcon = if (marcado) {
+                                { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                            } else null
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Distancia al campus", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DISTANCIAS.forEach { (km, texto) ->
+                        FilterChip(
+                            selected = distancia == km,
+                            onClick = { distancia = km },
+                            label = { Text(texto) }
+                        )
+                    }
+                }
+            }
 
-            // Botón Aplicar filtros (Rojo)
             Button(
                 onClick = {
-                    val activeServices = services.filter { it.value }.keys
-                    onApply(priceRange.start, priceRange.endInclusive, selectedType, activeServices)
-                    onDismiss()
+                    onApply(
+                        filtroActual.copy(
+                            precioMin = priceRange.start.toDouble().takeIf { it > PRECIO_MIN },
+                            precioMax = priceRange.endInclusive.toDouble().takeIf { it < PRECIO_MAX },
+                            tipo = selectedType,
+                            servicios = services.toList(),
+                            distanciaMaxKm = distancia
+                        )
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
-                shape = RoundedCornerShape(25.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = RedUEB, contentColor = Color.White)
+                    .height(52.dp),
+                shape = RoundedCornerShape(26.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = RedUEB)
             ) {
                 Text("Aplicar filtros", fontWeight = FontWeight.Bold, fontSize = 15.sp)
             }
-
             TextButton(
-                onClick = {
-                    priceRange = 100f..500f
-                    selectedType = "Habitación"
-                    onDismiss()
-                },
+                onClick = { onApply(FiltroCatalogo(texto = filtroActual.texto)) },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Limpiar", color = TextSecondary, fontSize = 14.sp)
+                Text("Limpiar filtros", color = TextSecondary, fontSize = 14.sp)
             }
         }
     }
 }
+
+private const val PRECIO_MIN = 50f
+private const val PRECIO_MAX = 600f
+val TIPOS_VIVIENDA = listOf("Habitación", "Departamento", "Casa")
+private val SERVICIOS = listOf("WiFi", "Agua", "Luz", "Lavadora", "Amoblado", "Parqueadero")
+private val DISTANCIAS = listOf(null to "Cualquiera", 0.5 to "Hasta 500 m", 1.0 to "Hasta 1 km", 3.0 to "Hasta 3 km")
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -238,6 +187,7 @@ fun PropertyDetailScreen(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
+                        .navigationBarsPadding()
                         .padding(16.dp)
                 ) {
                     Button(
@@ -443,10 +393,10 @@ fun PropertyDetailScreen(
                     )
                     AssistChip(
                         onClick = { },
-                        label = { Text("WiFi", fontSize = 12.sp) },
+                        label = { Text(property.type, fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Wifi,
+                                imageVector = Icons.Default.HomeWork,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
                                 tint = BlueUEB
@@ -456,8 +406,8 @@ fun PropertyDetailScreen(
                     )
                 }
 
-                // Descripción
-                Column {
+                // Descripción (se oculta si el propietario no escribió una)
+                if (property.description.isNotBlank()) Column {
                     Text(
                         text = "Descripción",
                         fontSize = 16.sp,
