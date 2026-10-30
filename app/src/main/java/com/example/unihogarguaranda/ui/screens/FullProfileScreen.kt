@@ -172,8 +172,12 @@ fun FullProfileScreen(
 
         // Opciones del menú
         // Opciones según el rol: "Mis publicaciones" y "Mi expediente" son solo de propietarios
-        val opciones = if (roleTitle == "Propietario") ownerOnlyOptions + studentOptions
-        else studentOptions.filter { it.title != "Mis publicaciones" }
+        val opciones = if (roleTitle == "Propietario") {
+            val propias = studentOptions.filter { it.title == "Mis publicaciones" }
+            propias + ownerOnlyOptions + studentOptions.filter { it.title !in setOf("Mis publicaciones", "Mis favoritos") }
+        } else {
+            studentOptions.filter { it.title != "Mis publicaciones" }
+        }
         items(opciones) { option ->
             Surface(
                 shape = RoundedCornerShape(14.dp),

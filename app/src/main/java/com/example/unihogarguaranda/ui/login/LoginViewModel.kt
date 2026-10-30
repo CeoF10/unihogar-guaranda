@@ -28,7 +28,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val _uiState = MutableStateFlow(
-        LoginUiState(email = "neicer.jimenez@ueb.edu.ec")
+        LoginUiState()
     )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
@@ -106,15 +106,11 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun onRoleChanged(role: UserRole) {
-        val suggestedEmail = if (role == UserRole.ESTUDIANTE) {
-            "neicer.jimenez@ueb.edu.ec"
-        } else {
-            "neycerjimenezf10@gmail.com"
-        }
+        // Al cambiar de rol se limpia el correo: cada rol usa un dominio distinto
         _uiState.update { 
             it.copy(
                 role = role, 
-                email = suggestedEmail,
+                email = "",
                 errorMessage = null,
                 successMessage = null
             ) 
@@ -174,7 +170,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetState() {
         _uiState.update { 
-            LoginUiState(email = "neicer.jimenez@ueb.edu.ec") 
+            LoginUiState() 
         }
     }
 

@@ -130,6 +130,9 @@ fun LoginScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                // No se mete bajo la barra de estado y sube con el teclado
+                .systemBarsPadding()
+                .imePadding()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -159,7 +162,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = if (uiState.isRegisterMode) {
-                        if (uiState.role == UserRole.PROPIETARIO) "Registro y Validación de Arrendador" else "Registro de Estudiante"
+                        if (uiState.role == UserRole.PROPIETARIO) "Registro de Propietario" else "Registro de Estudiante"
                     } else "Tu espacio cerca de la UEB",
                     fontSize = 14.sp,
                     color = TextSecondary,
@@ -204,7 +207,7 @@ fun LoginScreen(
             val helperText = if (uiState.role == UserRole.ESTUDIANTE) {
                 if (uiState.isRegisterMode) "Registro con correo institucional @ueb.edu.ec" else "Acceso institucional (@ueb.edu.ec)"
             } else {
-                if (uiState.isRegisterMode) "Paso 1: Validación de Identidad Civil y Biometría" else "Acceso para propietarios acreditados"
+                if (uiState.isRegisterMode) "Sus datos y una foto con su cédula" else "Acceso para propietarios acreditados"
             }
 
             Text(
@@ -243,7 +246,7 @@ fun LoginScreen(
                     OutlinedTextField(
                         value = uiState.identificationNumber,
                         onValueChange = { viewModel.onIdentificationChanged(it) },
-                        label = { Text("Cédula de identidad (10 dígitos)") },
+                        label = { Text("Cédula (10 dígitos)") },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.CreditCard, contentDescription = null, tint = BlueUEB, modifier = Modifier.size(18.dp))
                         },
@@ -307,7 +310,7 @@ fun LoginScreen(
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "Prueba de Vida y Biometría Facial",
+                                        text = "Foto de verificación",
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 13.sp,
                                         color = if (uiState.isBiometricApproved) Color(0xFF065F46) else TextPrimary
@@ -315,13 +318,13 @@ fun LoginScreen(
                                 }
                                 if (uiState.isBiometricApproved) {
                                     Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF10B981)) {
-                                        Text("96% MATCH", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                        Text("Listo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
                                     }
                                 }
                             }
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Sostenga su cédula al lado de su rostro frente a la cámara para autenticar su identidad.",
+                                text = "Tómese una foto sosteniendo su cédula junto al rostro. Bienestar UEB la revisa junto a su expediente.",
                                 fontSize = 11.sp,
                                 color = TextSecondary,
                                 lineHeight = 15.sp
@@ -338,7 +341,7 @@ fun LoginScreen(
                                 Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(16.dp))
                                 Spacer(modifier = Modifier.width(6.dp))
                                 Text(
-                                    text = if (uiState.isBiometricApproved) "Identidad Biométrica Aprobada (Cámara)" else "Abrir Cámara para Escanear Rostro",
+                                    text = if (uiState.isBiometricApproved) "Foto tomada · Repetir" else "Tomar foto con la cámara",
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -377,7 +380,7 @@ fun LoginScreen(
                     Icon(imageVector = Icons.Default.Email, contentDescription = null, tint = BlueUEB, modifier = Modifier.size(18.dp))
                 },
                 placeholder = { 
-                    Text(if (uiState.role == UserRole.ESTUDIANTE) "ej. neicer.jimenez@ueb.edu.ec" else "ej. neycerjimenezf10@gmail.com") 
+                    Text(if (uiState.role == UserRole.ESTUDIANTE) "nombre.apellido@ueb.edu.ec" else "tucorreo@gmail.com") 
                 },
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
@@ -502,7 +505,7 @@ fun LoginScreen(
                 } else {
                     Text(
                         text = if (uiState.isRegisterMode) {
-                            if (uiState.role == UserRole.PROPIETARIO) "Registrar y Validar Identidad" else "Crear Cuenta Estudiantil"
+                            if (uiState.role == UserRole.PROPIETARIO) "Crear cuenta de propietario" else "Crear cuenta de estudiante"
                         } else "Comenzar",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold

@@ -205,7 +205,7 @@ fun MisPublicacionesScreen(onBack: () -> Unit) {
 }
 
 // RF05: valida tipo y tamaño en el teléfono antes de enviar (la API vuelve a validar)
-private fun prepararFotos(context: Context, uris: List<Uri>): List<MultipartBody.Part> {
+internal fun prepararFotos(context: Context, uris: List<Uri>): List<MultipartBody.Part> {
     val partes = mutableListOf<MultipartBody.Part>()
     uris.take(5).forEachIndexed { i, uri ->
         val tipo = context.contentResolver.getType(uri)
