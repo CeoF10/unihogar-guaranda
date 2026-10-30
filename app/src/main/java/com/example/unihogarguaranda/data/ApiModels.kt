@@ -25,6 +25,8 @@ data class InmuebleResponse(
     val lng: Double,
     val estado: String?,
     val verificado: Boolean? = null,
+    val distanciaCampusKm: Double? = null,
+    val contacto: String? = null,
     val costos: CostosResponse? = null,
     val fotos: List<FotoResponse>? = null
 )
@@ -96,8 +98,14 @@ data class FiltroCatalogo(
     val precioMin: Double? = null,
     val precioMax: Double? = null,
     val tipo: String? = null,
-    val servicios: List<String> = emptyList()
-)
+    val servicios: List<String> = emptyList(),
+    val texto: String? = null,
+    val distanciaMaxKm: Double? = null
+) {
+    // Cantidad de filtros activos sin contar el texto del buscador
+    val activos: Int
+        get() = listOfNotNull(precioMin ?: precioMax, tipo, distanciaMaxKm).size + servicios.size
+}
 
 data class ExpedienteResponse(
     val estado: String,
