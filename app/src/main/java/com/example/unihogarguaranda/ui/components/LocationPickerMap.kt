@@ -3,6 +3,7 @@ package com.example.unihogarguaranda.ui.components
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import com.example.unihogarguaranda.R
 import org.osmdroid.config.Configuration
 import org.osmdroid.events.MapEventsReceiver
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
@@ -46,11 +47,18 @@ fun LocationPickerMap(
             // Se conserva la capa de toques (posición 0) y se redibuja el marcador
             mapView.overlays.removeAll { it is Marker }
             if (latitude != null && longitude != null) {
+                val punto = GeoPoint(latitude, longitude)
                 mapView.overlays.add(Marker(mapView).apply {
-                    position = GeoPoint(latitude, longitude)
+                    position = punto
                     setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                    icon = androidx.core.content.ContextCompat.getDrawable(mapView.context, R.drawable.ic_map_pin_selected)
                     title = "Ubicación del inmueble"
                 })
+                // Si el punto cambió (GPS o toque), el mapa se centra en él
+                if (mapView.tag != punto.toString()) {
+                    mapView.tag = punto.toString()
+                    mapView.controller.animateTo(punto, maxOf(mapView.zoomLevelDouble, 17.0), 600L)
+                }
             }
             mapView.invalidate()
         }

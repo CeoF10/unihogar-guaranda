@@ -23,7 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.unihogarguaranda.data.ApiClient
-import com.example.unihogarguaranda.data.NuevoInmuebleRequest
+import com.example.unihogarguaranda.data.ExpedienteResponse
+import com.example.unihogarguaranda.data.InmuebleResponse
 import com.example.unihogarguaranda.data.Session
 import com.example.unihogarguaranda.data.toProperty
 import com.example.unihogarguaranda.data.FiltroCatalogo
@@ -711,50 +712,52 @@ fun OwnerHomeScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     var selectedTab by remember { mutableStateOf(0) }
     var showRegisterWizard by remember { mutableStateOf(false) }
-    var hasSubmittedProperty by remember { mutableStateOf(false) }
     var showMisPublicaciones by remember { mutableStateOf(false) }
     var showMiExpediente by remember { mutableStateOf(false) }
+    var showMessages by remember { mutableStateOf(false) }
+    var anuncios by remember { mutableStateOf<List<InmuebleResponse>>(emptyList()) }
+    var expediente by remember { mutableStateOf<ExpedienteResponse?>(null) }
+    var cargando by remember { mutableStateOf(true) }
+    // Se incrementa para volver a pedir los datos al regresar de otra pantalla
+    var recarga by remember { mutableStateOf(0) }
 
-    if (showMiExpediente) {
-        MiExpedienteScreen(onBack = { showMiExpediente = false })
-        return
+    LaunchedEffect(recarga) {
+        val auth = Session.bearer(context) ?: return@LaunchedEffect
+        try {
+            anuncios = ApiClient.service.misInmuebles(auth).body()?.sortedByDescending { it.id } ?: emptyList()
+            expediente = ApiClient.service.getExpediente(auth).body()
+        } catch (e: IOException) {
+            Toast.makeText(context, "Sin conexión con el servidor UniHogar", Toast.LENGTH_LONG).show()
+        }
+        cargando = false
     }
 
-    if (showMisPublicaciones) {
-        MisPublicacionesScreen(onBack = { showMisPublicaciones = false })
-        return
-    }
-
-    if (showRegisterWizard) {
-        com.example.unihogarguaranda.ui.screens.RegisterPropertyWizardScreen(
-            onDismiss = { showRegisterWizard = false },
-            onPropertySubmitted = { draft ->
-                scope.launch {
-                    val auth = Session.bearer(context) ?: return@launch
-                    try {
-                        val response = ApiClient.service.crearInmueble(auth, draft)
-                        if (response.isSuccessful) {
-                            showRegisterWizard = false
-                            hasSubmittedProperty = true
-                            Toast.makeText(
-                                context,
-                                "Borrador guardado. Suba las fotos y publíquelo en Mis publicaciones.",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        } else {
-                            val message = ApiClient.errorMessage(response.errorBody()?.string(), "No se pudo registrar el inmueble")
-                            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
-                        }
-                    } catch (e: IOException) {
-                        Toast.makeText(context, "Sin conexión con la API UniHogar", Toast.LENGTH_LONG).show()
-                    }
+    when {
+        showRegisterWizard -> {
+            com.example.unihogarguaranda.ui.screens.RegisterPropertyWizardScreen(
+                onDismiss = { showRegisterWizard = false },
+                onFinished = { mensaje ->
+                    Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+                    showRegisterWizard = false
+                    recarga++
                 }
-            }
-        )
-        return
+            )
+            return
+        }
+        showMisPublicaciones -> {
+            MisPublicacionesScreen(onBack = { showMisPublicaciones = false; recarga++ })
+            return
+        }
+        showMiExpediente -> {
+            MiExpedienteScreen(onBack = { showMiExpediente = false; recarga++ })
+            return
+        }
+        showMessages -> {
+            MessagesScreen(onBack = { showMessages = false })
+            return
+        }
     }
 
     Scaffold(
@@ -763,226 +766,221 @@ fun OwnerHomeScreen(
             TopAppBar(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("Uni", fontWeight = FontWeight.Black, fontSize = 20.sp, color = BlueUEB)
-                        Text("Hogar", fontWeight = FontWeight.Black, fontSize = 20.sp, color = RedUEB)
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Propietario", fontSize = 13.sp, color = TextSecondary)
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onLogout) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                            contentDescription = "Cerrar sesión",
-                            tint = RedUEB
-                        )
+                        Text("Uni", fontWeight = FontWeight.Black, fontSize = 22.sp, color = BlueUEB)
+                        Text("Hogar", fontWeight = FontWeight.Black, fontSize = 22.sp, color = RedUEB)
+                        Text(" Propietario", fontWeight = FontWeight.SemiBold, fontSize = 15.sp, color = TextSecondary)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = {
-                    showRegisterWizard = true
-                },
-                containerColor = RedUEB,
-                contentColor = Color.White,
-                shape = RoundedCornerShape(20.dp)
-            ) {
-                Text("+ Registrar inmueble por pasos", fontWeight = FontWeight.Bold)
+            if (selectedTab == 0) {
+                ExtendedFloatingActionButton(
+                    onClick = { showRegisterWizard = true },
+                    containerColor = RedUEB,
+                    contentColor = Color.White,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("Publicar inmueble", fontWeight = FontWeight.Bold) }
+                )
             }
         },
         bottomBar = {
             NavigationBar(containerColor = Color.White, tonalElevation = 0.dp) {
-                NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Mis Anuncios") },
-                    label = { Text("Anuncios", fontSize = 11.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = RedUEB,
-                        selectedTextColor = RedUEB
+                listOf(Icons.Default.HomeWork to "Mis anuncios", Icons.Default.Person to "Perfil").forEachIndexed { i, (icono, texto) ->
+                    NavigationBarItem(
+                        selected = selectedTab == i,
+                        onClick = { selectedTab = i },
+                        icon = { Icon(icono, contentDescription = texto) },
+                        label = { Text(texto, fontSize = 11.sp, fontWeight = if (selectedTab == i) FontWeight.Bold else FontWeight.Normal) },
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = RedUEB,
+                            selectedTextColor = RedUEB,
+                            unselectedIconColor = TextSecondary,
+                            unselectedTextColor = TextSecondary,
+                            indicatorColor = ChipBackground
+                        )
                     )
-                )
-                NavigationBarItem(
-                    selected = selectedTab == 1,
-                    onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Perfil") },
-                    label = { Text("Perfil", fontSize = 11.sp) },
-                    colors = NavigationBarItemDefaults.colors(
-                        selectedIconColor = RedUEB,
-                        selectedTextColor = RedUEB
-                    )
-                )
+                }
             }
         }
     ) { paddingValues ->
-        if (selectedTab == 0) {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = BlueUEB),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(18.dp)) {
-                            Text("Panel de Arrendador", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 17.sp)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text("0 inmuebles publicados · 0 solicitudes pendientes", color = Color(0xFFD1D5DB), fontSize = 13.sp)
-                        }
-                    }
-                }
-
-                // ============================================================
-                // MODULO DE AUDITORIA Y SEGURIDAD JURIDICA (CANTÓN GUARANDA)
-                // ============================================================
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFFDE68A)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Gavel,
-                                        contentDescription = null,
-                                        tint = BlueUEB,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Acreditación Jurídica",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 15.sp,
-                                        color = BlueUEB
-                                    )
-                                }
-                                Surface(
-                                    shape = RoundedCornerShape(8.dp),
-                                    color = Color(0xFFFEF3C7)
-                                ) {
-                                    Text(
-                                        text = "EN AUDITORÍA",
-                                        color = Color(0xFF92400E),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = "Expediente en verificación por Bienestar Estudiantil UEB y Catastro Municipal:",
-                                fontSize = 12.sp,
-                                color = TextPrimary
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Cédula ecuatoriana validada con Registro Civil (Módulo 10)", fontSize = 11.sp, color = TextSecondary)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Schedule, contentDescription = null, tint = Color(0xFFD97706), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Título de dominio / Predial en cotejo con GAD Guaranda", fontSize = 11.sp, color = TextSecondary)
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color(0xFF10B981), modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text("Planilla de servicio básico de Guaranda adjunta", fontSize = 11.sp, color = TextSecondary)
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Text(
-                                text = "Nota: La publicación de inmuebles se habilitará una vez aprobado el dictamen legal para proteger la seguridad de los estudiantes.",
-                                fontSize = 11.sp,
-                                color = TextSecondary,
-                                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                                lineHeight = 15.sp
-                            )
-                        }
-                    }
-                }
-
-                item {
-                    Text("Tus Inmuebles", fontWeight = FontWeight.Bold, fontSize = 17.sp, color = TextPrimary)
-                }
-
-                item {
-                    Card(
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(28.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Surface(
-                                shape = CircleShape,
-                                color = BackgroundLight,
-                                modifier = Modifier.size(56.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Icon(
-                                        imageVector = Icons.Default.Apartment,
-                                        contentDescription = null,
-                                        tint = TextSecondary,
-                                        modifier = Modifier.size(28.dp)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(14.dp))
-                            Text(
-                                text = "Aún no tienes inmuebles publicados",
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp,
-                                color = TextPrimary
-                            )
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(
-                                text = "La publicación y gestión de inmuebles estará activa en la siguiente fase del proyecto.",
-                                fontSize = 13.sp,
-                                color = TextSecondary,
-                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                lineHeight = 18.sp
-                            )
-                        }
-                    }
-                }
-            }
-        } else {
+        if (selectedTab == 1) {
             FullProfileScreen(
                 email = ownerEmail,
                 roleTitle = "Propietario",
                 onLogout = onLogout,
                 modifier = Modifier.padding(paddingValues),
                 onOptionClick = { option ->
-                    if (option == "Mis publicaciones") showMisPublicaciones = true
-                    else if (option == "Mi expediente") showMiExpediente = true
-                    else Toast.makeText(context, "$option (próximamente)", Toast.LENGTH_SHORT).show()
+                    when (option) {
+                        "Mis publicaciones" -> showMisPublicaciones = true
+                        "Mi expediente" -> showMiExpediente = true
+                        "Mensajes" -> showMessages = true
+                    }
                 }
             )
+            return@Scaffold
+        }
+
+        val visibles = anuncios.count { it.estado == "DISPONIBLE" }
+        val enAuditoria = anuncios.count { it.estado == "EN_AUDITORIA" }
+        val borradores = anuncios.count { it.estado == "BORRADOR" || it.estado == "PAUSADO" }
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 96.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Resumen
+            item {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = BlueUEB),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(Modifier.padding(20.dp)) {
+                        Text("Panel del propietario", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        Text(ownerEmail, color = Color.White.copy(alpha = 0.7f), fontSize = 12.sp)
+                        Spacer(Modifier.height(16.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            ResumenNumero("$visibles", "Visibles")
+                            ResumenNumero("$enAuditoria", "En revisión")
+                            ResumenNumero("$borradores", "Borradores")
+                        }
+                    }
+                }
+            }
+
+            // Estado real del expediente
+            item {
+                ExpedienteCard(expediente, cargando) { showMiExpediente = true }
+            }
+
+            item {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Tus inmuebles", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = TextPrimary, modifier = Modifier.weight(1f))
+                    if (anuncios.isNotEmpty()) {
+                        TextButton(onClick = { showMisPublicaciones = true }) { Text("Gestionar", color = RedUEB) }
+                    }
+                }
+            }
+
+            if (!cargando && anuncios.isEmpty()) {
+                item {
+                    Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(18.dp)) {
+                        Column(
+                            Modifier.fillMaxWidth().padding(28.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(Icons.Default.HomeWork, null, tint = BlueUEB.copy(alpha = 0.4f), modifier = Modifier.size(48.dp))
+                            Spacer(Modifier.height(10.dp))
+                            Text("Aún no tienes inmuebles", fontWeight = FontWeight.Bold, color = TextPrimary)
+                            Text(
+                                "Publica tu primer inmueble con el botón de abajo. Bienestar UEB lo revisará antes de mostrarlo.",
+                                fontSize = 13.sp,
+                                color = TextSecondary,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+
+            items(anuncios, key = { it.id }) { anuncio ->
+                AnuncioPropioCard(anuncio) { showMisPublicaciones = true }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResumenNumero(valor: String, etiqueta: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(valor, color = Color.White, fontSize = 26.sp, fontWeight = FontWeight.Black)
+        Text(etiqueta, color = Color.White.copy(alpha = 0.75f), fontSize = 12.sp)
+    }
+}
+
+@Composable
+private fun ExpedienteCard(expediente: ExpedienteResponse?, cargando: Boolean, onClick: () -> Unit) {
+    val estado = expediente?.estado
+    val (color, titulo, detalle, boton) = when (estado) {
+        "APROBADO" -> listOf("verde", "Expediente aprobado", "Bienestar UEB validó su identidad y la propiedad.", "Ver expediente")
+        "PENDIENTE_AUDITORIA" -> listOf("ambar", "Expediente en revisión", "Bienestar UEB está revisando sus documentos.", "Ver expediente")
+        "OBSERVADO" -> listOf("rojo", "Expediente observado", expediente.dictamen ?: "Corrija los documentos y vuelva a enviarlos.", "Corregir")
+        else -> listOf("ambar", "Envíe su expediente", "Cédula, título de la propiedad y una planilla de luz o agua.", "Enviar expediente")
+    }
+    val acento = when (color) {
+        "verde" -> Color(0xFF047857)
+        "rojo" -> RedUEB
+        else -> Color(0xFFB45309)
+    }
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        border = androidx.compose.foundation.BorderStroke(1.dp, acento.copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(44.dp).clip(CircleShape).background(acento.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    when (estado) {
+                        "APROBADO" -> Icons.Default.VerifiedUser
+                        "OBSERVADO" -> Icons.Default.ErrorOutline
+                        else -> Icons.Default.Description
+                    },
+                    null,
+                    tint = acento
+                )
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(if (cargando) "Cargando expediente..." else titulo, fontWeight = FontWeight.Bold, color = TextPrimary)
+                if (!cargando) {
+                    Text(detalle, fontSize = 12.sp, color = TextSecondary)
+                    TextButton(onClick = onClick, contentPadding = PaddingValues(0.dp)) {
+                        Text(boton, color = acento, fontWeight = FontWeight.Bold)
+                        Icon(Icons.Default.ChevronRight, null, tint = acento, modifier = Modifier.size(18.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AnuncioPropioCard(anuncio: InmuebleResponse, onClick: () -> Unit) {
+    val (etiqueta, color) = when (anuncio.estado) {
+        "DISPONIBLE" -> "Visible" to Color(0xFF047857)
+        "EN_AUDITORIA" -> "En revisión" to Color(0xFFB45309)
+        "PAUSADO" -> "Pausado" to TextSecondary
+        "ARRENDADO" -> "Arrendado" to BlueUEB
+        else -> "Borrador" to TextSecondary
+    }
+    Card(
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+        modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)
+    ) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.size(72.dp).clip(RoundedCornerShape(12.dp))) {
+                FotoInmueble(anuncio.toProperty(), iconSize = 30)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(anuncio.title, fontWeight = FontWeight.Bold, color = TextPrimary, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text("$${anuncio.price.toInt()} / mes · ${anuncio.type}", fontSize = 13.sp, color = BlueUEB)
+                Text("${anuncio.fotos?.size ?: 0} foto(s)", fontSize = 12.sp, color = TextSecondary)
+            }
+            Surface(shape = RoundedCornerShape(8.dp), color = color.copy(alpha = 0.12f)) {
+                Text(etiqueta, color = color, fontSize = 11.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+            }
         }
     }
 }
