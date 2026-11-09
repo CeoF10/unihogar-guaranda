@@ -26,6 +26,9 @@ import kotlinx.coroutines.launch
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import com.example.unihogarguaranda.util.SelfieCedula
+import com.example.unihogarguaranda.ui.components.SelfieCedulaDialog
 import java.io.IOException
 
 // Mismos tipos de documento que acepta la API
@@ -57,6 +60,15 @@ fun MiExpedienteScreen(onBack: () -> Unit) {
     var archivoCedula by remember { mutableStateOf<Uri?>(null) }
     var archivoTitulo by remember { mutableStateOf<Uri?>(null) }
     var archivoPlanilla by remember { mutableStateOf<Uri?>(null) }
+    var selfieLista by remember { mutableStateOf(SelfieCedula.existe(context)) }
+    var mostrarSelfie by remember { mutableStateOf(false) }
+
+    if (mostrarSelfie) {
+        SelfieCedulaDialog(
+            onDismiss = { mostrarSelfie = false; selfieLista = SelfieCedula.existe(context) },
+            onConfirmada = { mostrarSelfie = false; selfieLista = SelfieCedula.existe(context) }
+        )
+    }
 
     LaunchedEffect(Unit) {
         val auth = Session.bearer(context) ?: return@LaunchedEffect
@@ -130,6 +142,9 @@ fun MiExpedienteScreen(onBack: () -> Unit) {
                 }
             }
 
+            Text("Foto con tu cédula junto al rostro", fontWeight = FontWeight.SemiBold, color = TextPrimary)
+            ArchivoBoton(if (selfieLista) "Foto tomada · Ver o repetir" else "Tomar foto con la cámara", selfieLista) { mostrarSelfie = true }
+
             Text("Documentos (PDF, JPEG, PNG o WebP, máximo 5 MB)", fontWeight = FontWeight.SemiBold, color = TextPrimary)
             ArchivoBoton("Cédula de identidad", archivoCedula != null) { selectorCedula.launch(MIMES) }
             ArchivoBoton("Título o escritura de la propiedad", archivoTitulo != null) { selectorTitulo.launch(MIMES) }
@@ -144,6 +159,10 @@ fun MiExpedienteScreen(onBack: () -> Unit) {
                 onClick = {
                     val auth = Session.bearer(context) ?: return@Button
                     val validacion = validar(context, cedulaRuc, claveCatastral, declarado, archivoCedula, archivoTitulo, archivoPlanilla)
+                    if (validacion == null && !SelfieCedula.existe(context)) {
+                        Toast.makeText(context, "Tómese la foto con su cédula junto al rostro", Toast.LENGTH_LONG).show()
+                        return@Button
+                    }
                     if (validacion != null) {
                         Toast.makeText(context, validacion, Toast.LENGTH_LONG).show()
                         return@Button
@@ -155,6 +174,10 @@ fun MiExpedienteScreen(onBack: () -> Unit) {
                             partes += archivoParte(context, "cedula", archivoCedula!!)
                             partes += archivoParte(context, "titulo", archivoTitulo!!)
                             partes += archivoParte(context, "planilla", archivoPlanilla!!)
+                            partes += MultipartBody.Part.createFormData(
+                                "selfie", "selfie.jpg",
+                                SelfieCedula.archivo(context).asRequestBody("image/jpeg".toMediaTypeOrNull())
+                            )
                             partes += MultipartBody.Part.createFormData("cedula_ruc", cedulaRuc)
                             partes += MultipartBody.Part.createFormData("clave_catastral", claveCatastral)
                             partes += MultipartBody.Part.createFormData("tipo_documento", tipo)

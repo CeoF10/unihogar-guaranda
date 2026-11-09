@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +36,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unihogarguaranda.R
+import com.example.unihogarguaranda.ui.components.SelfieCedulaDialog
+import com.example.unihogarguaranda.ui.components.ServidorDialog
+import com.example.unihogarguaranda.data.ApiClient
 import com.example.unihogarguaranda.ui.theme.*
 
 /**
@@ -50,6 +54,29 @@ fun LoginScreen(
     onLoginSuccess: (UserRole, String) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showSelfieDialog by rememberSaveable { mutableStateOf(false) }
+    var showServidorDialog by rememberSaveable { mutableStateOf(false) }
+    var servidorActual by remember { mutableStateOf(ApiClient.baseUrl) }
+
+    if (showServidorDialog) {
+        ServidorDialog(
+            onDismiss = { showServidorDialog = false },
+            onGuardado = {
+                showServidorDialog = false
+                servidorActual = ApiClient.baseUrl
+            }
+        )
+    }
+
+    if (showSelfieDialog) {
+        SelfieCedulaDialog(
+            onDismiss = { showSelfieDialog = false },
+            onConfirmada = {
+                showSelfieDialog = false
+                viewModel.onFotoCedulaLista()
+            }
+        )
+    }
     val focusManager = LocalFocusManager.current
 
     if (uiState.isSuccess) {
@@ -246,12 +273,14 @@ fun LoginScreen(
                         supportingText = {
                             if (uiState.identificationNumber.length == 10) {
                                 Text(
-                                    text = if (uiState.isCedulaValid) "Cédula válida" else "Cédula no válida",
+                                    text = if (uiState.isCedulaValid) "Cédula verificada · emitida en ${uiState.provinciaCedula}"
+                                    else "Cédula no válida: revise los 10 dígitos",
                                     color = if (uiState.isCedulaValid) Color(0xFF047857) else RedUEB,
-                                    fontSize = 11.sp
+                                    fontSize = 11.sp,
+                                    fontWeight = if (uiState.isCedulaValid) FontWeight.SemiBold else FontWeight.Normal
                                 )
                             } else {
-                                Text("Bienestar UEB verifica su identidad con el expediente que suba después.", fontSize = 11.sp, color = TextSecondary)
+                                Text("Se verifica el dígito verificador y la provincia de emisión.", fontSize = 11.sp, color = TextSecondary)
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -267,6 +296,56 @@ fun LoginScreen(
                         shape = RoundedCornerShape(14.dp)
                     )
 
+                    // Foto con la cédula junto al rostro: se envía con el expediente a Bienestar UEB
+                    val lista = uiState.fotoCedulaLista
+                    Card(
+                        shape = RoundedCornerShape(14.dp),
+                        colors = CardDefaults.cardColors(containerColor = if (lista) Color(0xFFD1FAE5) else Color.White),
+                        border = BorderStroke(1.dp, if (lista) Color(0xFF10B981) else DividerColor),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(modifier = Modifier.padding(14.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Face,
+                                    contentDescription = null,
+                                    tint = if (lista) Color(0xFF065F46) else BlueUEB,
+                                    modifier = Modifier.size(22.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "Foto con tu cédula",
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp,
+                                    color = if (lista) Color(0xFF065F46) else TextPrimary,
+                                    modifier = Modifier.weight(1f)
+                                )
+                                if (lista) {
+                                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF10B981)) {
+                                        Text("Lista", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
+                                    }
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = "Tómate una foto sosteniendo tu cédula junto al rostro. Se envía con tu expediente y Bienestar UEB la revisa.",
+                                fontSize = 11.sp,
+                                color = TextSecondary,
+                                lineHeight = 15.sp
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                onClick = { showSelfieDialog = true },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(10.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = if (lista) Color(0xFF047857) else BlueUEB)
+                            ) {
+                                Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(16.dp))
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(if (lista) "Foto tomada · Ver o repetir" else "Tomar foto con la cámara", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
                 }
 
                 OutlinedTextField(
@@ -444,6 +523,17 @@ fun LoginScreen(
                     fontSize = 13.sp,
                     color = TextPrimary,
                     fontWeight = FontWeight.SemiBold
+                )
+            }
+
+            // Dirección de la API (IP de la PC por Wi-Fi, cable o túnel)
+            TextButton(onClick = { showServidorDialog = true }) {
+                Icon(Icons.Default.Dns, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    "Servidor: ${servidorActual.removeSuffix("/api/").substringAfter("://")} · Cambiar",
+                    fontSize = 11.sp,
+                    color = TextSecondary
                 )
             }
 

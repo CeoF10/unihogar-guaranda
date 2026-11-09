@@ -16,6 +16,9 @@ import retrofit2.http.Query
 
 interface ApiService {
 
+    @GET("health")
+    suspend fun health(): Response<Map<String, Any>>
+
     // RF01 / RF02: cuentas y sesión
     @POST("auth/register")
     suspend fun register(@Body body: RegisterRequest): Response<MensajeResponse>
@@ -26,7 +29,28 @@ interface ApiService {
     @POST("auth/recuperar")
     suspend fun recuperarClave(@Body body: EmailRequest): Response<MensajeResponse>
 
-    // Eliminación de cuenta (requisito de Google Play)
+    // Mensajes entre estudiante y propietario
+    @GET("conversaciones")
+    suspend fun getConversaciones(@Header("Authorization") auth: String): Response<List<ConversacionResponse>>
+
+    @POST("inmuebles/{id}/conversacion")
+    suspend fun abrirConversacion(@Header("Authorization") auth: String, @Path("id") inmuebleId: Long): Response<IdResponse>
+
+    @GET("conversaciones/{id}/mensajes")
+    suspend fun getMensajes(
+        @Header("Authorization") auth: String,
+        @Path("id") conversacionId: Long,
+        @Query("despues") despues: Long = 0
+    ): Response<MensajesResponse>
+
+    @POST("conversaciones/{id}/mensajes")
+    suspend fun enviarMensaje(
+        @Header("Authorization") auth: String,
+        @Path("id") conversacionId: Long,
+        @Body body: TextoRequest
+    ): Response<ChatMensaje>
+
+    // Eliminación de cuenta
     @POST("cuenta/eliminar")
     suspend fun eliminarCuenta(@Header("Authorization") auth: String, @Body body: PasswordRequest): Response<MensajeResponse>
 

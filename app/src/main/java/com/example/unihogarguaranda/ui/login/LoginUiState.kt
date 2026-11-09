@@ -11,7 +11,7 @@ enum class UserRole(val label: String) {
 /**
  * Estado del formulario de Registro e Inicio de Sesión de Usuario.
  * Flujo desacoplado:
- * - Fase 1 (Login/Registro): Registro del usuario; el propietario indica su cédula (validada con Módulo 10).
+ * - Fase 1 (Login/Registro): Registro del usuario; el propietario valida su cédula y se toma una foto con ella.
  * - Fase 2 (Post-Login): El registro del inmueble y los documentos prediales/GPS se realizan por pasos en su propio panel.
  */
 data class LoginUiState(
@@ -36,6 +36,9 @@ data class LoginUiState(
     // ========================================================================
     val identificationNumber: String = "", // Cédula ecuatoriana 10 dígitos
     val isCedulaValid: Boolean = false,
+    val provinciaCedula: String? = null,
+    // Foto del propietario con su cédula junto al rostro (se envía con el expediente)
+    val fotoCedulaLista: Boolean = false,
 
     // Recuperación de Acceso (RF02)
     val showForgotPasswordDialog: Boolean = false,

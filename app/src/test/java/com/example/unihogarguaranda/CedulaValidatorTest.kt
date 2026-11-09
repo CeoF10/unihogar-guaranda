@@ -36,4 +36,9 @@ class CedulaValidatorTest {
         assertFalse(CedulaValidator.esValida("02018A4926"))
         assertFalse(CedulaValidator.esValida(""))
     }
+
+    @Test fun provinciaDeEmision() {
+        org.junit.Assert.assertEquals("Bolívar", CedulaValidator.provincia("0201234564"))
+        org.junit.Assert.assertNull(CedulaValidator.provincia("0201234565"))
+    }
 }

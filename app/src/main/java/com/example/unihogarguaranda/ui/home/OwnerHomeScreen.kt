@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.unihogarguaranda.ui.screens.ChatScreen
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -43,6 +44,8 @@ fun OwnerHomeScreen(
     var showMisPublicaciones by rememberSaveable { mutableStateOf(false) }
     var showMiExpediente by rememberSaveable { mutableStateOf(false) }
     var showMessages by rememberSaveable { mutableStateOf(false) }
+    var chatId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var chatTitulo by rememberSaveable { mutableStateOf("") }
     val vm: OwnerViewModel = viewModel()
     val ui by vm.ui.collectAsState()
 
@@ -73,8 +76,16 @@ fun OwnerHomeScreen(
             MiExpedienteScreen(onBack = { showMiExpediente = false; vm.recargar() })
             return
         }
+        chatId != null -> {
+            ChatScreen(conversacionId = chatId!!, titulo = chatTitulo, onBack = { chatId = null })
+            return
+        }
         showMessages -> {
-            MessagesScreen(onBack = { showMessages = false }, esPropietario = true)
+            MessagesScreen(
+                onBack = { showMessages = false },
+                esPropietario = true,
+                onAbrirConversacion = { id, titulo -> chatTitulo = titulo; chatId = id }
+            )
             return
         }
     }

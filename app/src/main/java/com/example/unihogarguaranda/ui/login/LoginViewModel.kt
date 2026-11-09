@@ -9,6 +9,7 @@ import com.example.unihogarguaranda.data.LoginRequest
 import com.example.unihogarguaranda.data.RegisterRequest
 import com.example.unihogarguaranda.data.Session
 import com.example.unihogarguaranda.util.CedulaValidator
+import com.example.unihogarguaranda.util.SelfieCedula
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,7 +29,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val _uiState = MutableStateFlow(
-        LoginUiState()
+        LoginUiState(fotoCedulaLista = SelfieCedula.existe(application))
     )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
@@ -60,9 +61,14 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 identificationNumber = filtered, 
                 isCedulaValid = isValid,
+                provinciaCedula = CedulaValidator.provincia(filtered),
                 errorMessage = null 
             ) 
         }
+    }
+
+    fun onFotoCedulaLista() {
+        _uiState.update { it.copy(fotoCedulaLista = true, errorMessage = null) }
     }
 
     fun onRoleChanged(role: UserRole) {
@@ -129,8 +135,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetState() {
-        _uiState.update { 
-            LoginUiState() 
+        _uiState.update {
+            LoginUiState(fotoCedulaLista = SelfieCedula.existe(getApplication()))
         }
     }
 
@@ -227,6 +233,13 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             if (!CedulaValidator.esValida(currentState.identificationNumber)) {
                 _uiState.update { 
                     it.copy(errorMessage = "La cédula no cumple el algoritmo Módulo 10 del Registro Civil.") 
+                }
+                return
+            }
+
+            if (!currentState.fotoCedulaLista || !SelfieCedula.existe(getApplication())) {
+                _uiState.update {
+                    it.copy(errorMessage = "Tómese la foto con su cédula junto al rostro para continuar.")
                 }
                 return
             }

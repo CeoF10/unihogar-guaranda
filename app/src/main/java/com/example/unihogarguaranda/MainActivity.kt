@@ -31,6 +31,7 @@ import com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        com.example.unihogarguaranda.data.ApiClient.configurar(this)
         
         // Habilitar visualización edge-to-edge con diseño inmersivo
         enableEdgeToEdge()

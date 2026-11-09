@@ -15,6 +15,11 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
+import com.example.unihogarguaranda.ui.screens.ChatScreen
+import com.example.unihogarguaranda.data.Session
+import com.example.unihogarguaranda.data.ApiClient
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +64,25 @@ fun StudentHomeScreen(
     // Al girar se pierde el objeto, pero se guarda el id para volver a abrir el mismo detalle
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
     var showMessages by rememberSaveable { mutableStateOf(false) }
+    var chatId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var chatTitulo by rememberSaveable { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+    val abrirChat: (Property) -> Unit = { prop ->
+        scope.launch {
+            val auth = Session.bearer(context)
+            try {
+                val r = auth?.let { ApiClient.service.abrirConversacion(it, prop.id) }
+                if (r?.isSuccessful == true) {
+                    chatTitulo = prop.title
+                    chatId = r.body()?.id
+                } else {
+                    Toast.makeText(context, ApiClient.errorMessage(r?.errorBody()?.string(), "No se pudo abrir el chat"), Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Sin conexión con el servidor UniHogar", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // Todo el estado del catálogo vive en el ViewModel; la pantalla solo lo dibuja
     val vm: CatalogViewModel = viewModel()
@@ -80,8 +104,16 @@ fun StudentHomeScreen(
         }
     }
 
+    chatId?.let { id ->
+        ChatScreen(conversacionId = id, titulo = chatTitulo, onBack = { chatId = null })
+        return
+    }
+
     if (showMessages) {
-        MessagesScreen(onBack = { showMessages = false })
+        MessagesScreen(
+            onBack = { showMessages = false },
+            onAbrirConversacion = { id, titulo -> chatTitulo = titulo; chatId = id }
+        )
         return
     }
 
@@ -94,7 +126,8 @@ fun StudentHomeScreen(
                 vm.alternarFavorito(prop)
                 selectedPropertyDetail = selectedPropertyDetail?.copy(isFavorite = !prop.isFavorite)
             },
-            onContactOwner = { prop -> contactarPropietario(context, prop) }
+            onContactOwner = { prop -> contactarPropietario(context, prop) },
+            onMessageOwner = abrirChat
         )
         return
     }

@@ -13,7 +13,8 @@ class ApiException(message: String) : Exception(message)
  */
 class UniHogarRepository(private val context: Context) {
 
-    private val api = ApiClient.service
+    // Siempre el servicio del servidor configurado en ese momento
+    private val api get() = ApiClient.service
     private fun auth(): String? = Session.bearer(context)
 
     suspend fun catalogo(filtro: FiltroCatalogo, pagina: Int): Result<InmueblesPage> = llamar {

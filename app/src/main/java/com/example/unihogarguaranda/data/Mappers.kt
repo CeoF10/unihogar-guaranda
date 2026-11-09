@@ -18,7 +18,7 @@ fun InmuebleResponse.toProperty(isFavorite: Boolean = false) = Property(
     isFavorite = isFavorite,
     lat = lat,
     lng = lng,
-    fotoUrls = fotos?.map { it.url } ?: emptyList(),
+    fotoUrls = fotos?.map { ApiClient.urlArchivo(it.url) } ?: emptyList(),
     contact = contacto,
     photoCount = fotos?.size ?: 0,
     costos = costos

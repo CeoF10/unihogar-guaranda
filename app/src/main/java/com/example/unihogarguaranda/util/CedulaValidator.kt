@@ -22,4 +22,15 @@ object CedulaValidator {
         val digitoVerificador = if (suma % 10 == 0) 0 else 10 - (suma % 10)
         return digitoVerificador == cedula[9].digitToInt()
     }
+
+    private val PROVINCIAS = listOf(
+        "Azuay", "Bolívar", "Cañar", "Carchi", "Cotopaxi", "Chimborazo", "El Oro", "Esmeraldas",
+        "Guayas", "Imbabura", "Loja", "Los Ríos", "Manabí", "Morona Santiago", "Napo", "Pastaza",
+        "Pichincha", "Tungurahua", "Zamora Chinchipe", "Galápagos", "Sucumbíos", "Orellana",
+        "Santo Domingo de los Tsáchilas", "Santa Elena"
+    )
+
+    /** Provincia donde se emitió la cédula (los dos primeros dígitos), o null si no es válida. */
+    fun provincia(cedula: String): String? =
+        if (esValida(cedula)) PROVINCIAS.getOrNull(cedula.substring(0, 2).toInt() - 1) else null
 }

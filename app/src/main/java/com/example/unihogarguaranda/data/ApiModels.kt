@@ -117,3 +117,26 @@ data class ExpedienteResponse(
     val tipoDocumento: String?,
     val dictamen: String?
 )
+
+// Mensajería entre estudiante y propietario
+data class ConversacionResponse(
+    val id: Long,
+    val inmuebleId: Long,
+    val titulo: String,
+    val conQuien: String,
+    val soyPropietario: Boolean,
+    val ultimoTexto: String?,
+    val ultimoEsMio: Boolean?,
+    val noLeidos: Int,
+    val actualizado: String
+)
+
+data class ConversacionInfo(val id: Long, val titulo: String, val inmuebleId: Long)
+
+data class ChatMensaje(val id: Long, val mio: Boolean, val texto: String, val creado: String)
+
+data class MensajesResponse(val conversacion: ConversacionInfo, val mensajes: List<ChatMensaje>)
+
+data class IdResponse(val id: Long)
+
+data class TextoRequest(val texto: String)

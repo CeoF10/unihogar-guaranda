@@ -175,7 +175,8 @@ fun PropertyDetailScreen(
     property: Property,
     onBack: () -> Unit,
     onToggleFavorite: (Property) -> Unit,
-    onContactOwner: (Property) -> Unit
+    onContactOwner: (Property) -> Unit,
+    onMessageOwner: ((Property) -> Unit)? = null
 ) {
     Scaffold(
         containerColor = BackgroundLight,
@@ -191,15 +192,26 @@ fun PropertyDetailScreen(
                         .navigationBarsPadding()
                         .padding(16.dp)
                 ) {
-                    Button(
-                        onClick = { onContactOwner(property) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(52.dp),
-                        shape = RoundedCornerShape(26.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = RedUEB, contentColor = Color.White)
-                    ) {
-                        Text("Contactar propietario", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (onMessageOwner != null) {
+                            Button(
+                                onClick = { onMessageOwner(property) },
+                                modifier = Modifier.weight(1f).height(52.dp),
+                                shape = RoundedCornerShape(26.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = RedUEB, contentColor = Color.White)
+                            ) {
+                                Text("Enviar mensaje", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = { onContactOwner(property) },
+                            modifier = Modifier.weight(1f).height(52.dp),
+                            shape = RoundedCornerShape(26.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.5.dp, RedUEB),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = RedUEB)
+                        ) {
+                            Text(if (onMessageOwner != null) "WhatsApp" else "Contactar propietario", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                        }
                     }
                 }
             }
