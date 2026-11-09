@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,11 +38,11 @@ fun OwnerHomeScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableStateOf(0) }
-    var showRegisterWizard by remember { mutableStateOf(false) }
-    var showMisPublicaciones by remember { mutableStateOf(false) }
-    var showMiExpediente by remember { mutableStateOf(false) }
-    var showMessages by remember { mutableStateOf(false) }
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    var showRegisterWizard by rememberSaveable { mutableStateOf(false) }
+    var showMisPublicaciones by rememberSaveable { mutableStateOf(false) }
+    var showMiExpediente by rememberSaveable { mutableStateOf(false) }
+    var showMessages by rememberSaveable { mutableStateOf(false) }
     val vm: OwnerViewModel = viewModel()
     val ui by vm.ui.collectAsState()
 

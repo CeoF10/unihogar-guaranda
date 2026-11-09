@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unihogarguaranda.ui.home.OwnerHomeScreen
@@ -43,8 +44,23 @@ class MainActivity : ComponentActivity() {
                     // Estado de sesión del usuario autenticado (Rol y Correo electrónico)
                     // Si es null -> muestra la pantalla de Login/Registro.
                     // Si contiene datos -> enruta al dashboard respectivo.
-                    var loggedInUser by remember { mutableStateOf<Pair<UserRole, String>?>(null) }
-                    var showWelcome by remember { mutableStateOf(true) }
+                    // rememberSaveable conserva la pantalla al girar el teléfono; al abrir la app
+                    // se restaura la sesión guardada si el token sigue vigente.
+                    var sessionRole by rememberSaveable {
+                        mutableStateOf(
+                            if (Session.hasValidToken(this@MainActivity)) Session.activeRole(this@MainActivity) else null
+                        )
+                    }
+                    var sessionEmail by rememberSaveable { mutableStateOf(Session.email(this@MainActivity)) }
+                    var showWelcome by rememberSaveable { mutableStateOf(sessionRole == null) }
+                    val loggedInUser: Pair<UserRole, String>? = sessionRole
+                        ?.let { name -> UserRole.entries.firstOrNull { it.name == name } }
+                        ?.let { role -> sessionEmail?.let { role to it } }
+                    val cerrarSesion = {
+                        Session.clear(this@MainActivity)
+                        sessionRole = null
+                        sessionEmail = null
+                    }
                     
                     // Instancia compartida del ViewModel de autenticación
                     val loginViewModel: LoginViewModel = viewModel()
@@ -64,11 +80,13 @@ class MainActivity : ComponentActivity() {
                         LoginScreen(
                             viewModel = loginViewModel,
                             onLoginSuccess = { role, email ->
-                                loggedInUser = Pair(role, email)
+                                Session.saveActiveRole(this@MainActivity, role.name)
+                                sessionEmail = email
+                                sessionRole = role.name
                             }
                         )
                     } else {
-                        val (role, email) = loggedInUser!!
+                        val (role, email) = loggedInUser
                         
                         // Flujo 2: Enrutamiento según perfil del usuario autenticado
                         if (role == UserRole.ESTUDIANTE) {
@@ -76,9 +94,8 @@ class MainActivity : ComponentActivity() {
                             StudentHomeScreen(
                                 studentEmail = email,
                                 onLogout = {
-                                    Session.clear(this@MainActivity)
+                                    cerrarSesion()
                                     loginViewModel.resetState()
-                                    loggedInUser = null
                                 }
                             )
                         } else {
@@ -86,9 +103,8 @@ class MainActivity : ComponentActivity() {
                             OwnerHomeScreen(
                                 ownerEmail = email,
                                 onLogout = {
-                                    Session.clear(this@MainActivity)
+                                    cerrarSesion()
                                     loginViewModel.resetState()
-                                    loggedInUser = null
                                 }
                             )
                         }

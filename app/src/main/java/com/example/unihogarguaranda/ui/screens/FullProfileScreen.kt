@@ -11,6 +11,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.example.unihogarguaranda.data.Session
+import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.unihogarguaranda.data.ApiClient
 import com.example.unihogarguaranda.data.EmailRequest
 import kotlinx.coroutines.launch
@@ -48,8 +50,15 @@ fun FullProfileScreen(
     onOptionClick: (String) -> Unit = {}
 ) {
     val scope = rememberCoroutineScope()
-    var dialogo by remember { mutableStateOf<String?>(null) }
-    var mensajeClave by remember { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val nombre = remember(email) {
+        Session.nombre(context)?.takeIf { it.isNotBlank() } ?: email.substringBefore("@")
+    }
+    val iniciales = remember(nombre) {
+        nombre.split(" ").filter { it.isNotBlank() }.take(2).joinToString("") { it.first().uppercase() }
+    }
+    var dialogo by rememberSaveable { mutableStateOf<String?>(null) }
+    var mensajeClave by rememberSaveable { mutableStateOf<String?>(null) }
 
     when (dialogo) {
         "Configuración" -> AlertDialog(
@@ -104,35 +113,32 @@ fun FullProfileScreen(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Spacer(modifier = Modifier.height(10.dp))
-            // Avatar con iniciales/icono
-            Box(
-                modifier = Modifier
-                    .size(80.dp)
-                    .clip(CircleShape)
-                    .background(BlueUEB),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(44.dp)
+            Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                // Avatar con iniciales/icono
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
+                        .clip(CircleShape)
+                        .background(BlueUEB),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(iniciales, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 28.sp)
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Text(
+                    text = nombre,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
+                    color = TextPrimary
                 )
+                Text(
+                    text = email,
+                    fontSize = 13.sp,
+                    color = TextSecondary
+                )
+                Spacer(modifier = Modifier.height(12.dp))
             }
-            Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = "Neicer Jimenez",
-                fontWeight = FontWeight.Bold,
-                fontSize = 20.sp,
-                color = TextPrimary
-            )
-            Text(
-                text = email,
-                fontSize = 13.sp,
-                color = TextSecondary
-            )
-            Spacer(modifier = Modifier.height(12.dp))
         }
 
         // Tarjeta azul del Rol Activo

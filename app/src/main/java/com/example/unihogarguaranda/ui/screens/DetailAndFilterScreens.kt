@@ -13,6 +13,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,9 +40,9 @@ fun FilterBottomSheet(
     var priceRange by remember {
         mutableStateOf((filtroActual.precioMin?.toFloat() ?: PRECIO_MIN)..(filtroActual.precioMax?.toFloat() ?: PRECIO_MAX))
     }
-    var selectedType by remember { mutableStateOf(filtroActual.tipo) }
+    var selectedType by rememberSaveable { mutableStateOf(filtroActual.tipo) }
     val services = remember { mutableStateListOf<String>().apply { addAll(filtroActual.servicios) } }
-    var distancia by remember { mutableStateOf(filtroActual.distanciaMaxKm) }
+    var distancia by rememberSaveable { mutableStateOf(filtroActual.distanciaMaxKm) }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,

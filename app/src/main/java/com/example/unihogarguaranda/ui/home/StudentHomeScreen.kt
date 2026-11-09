@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -52,10 +53,12 @@ fun StudentHomeScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    var selectedTab by remember { mutableStateOf(0) }
-    var showFilterSheet by remember { mutableStateOf(false) }
+    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    var showFilterSheet by rememberSaveable { mutableStateOf(false) }
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
-    var showMessages by remember { mutableStateOf(false) }
+    // Al girar se pierde el objeto, pero se guarda el id para volver a abrir el mismo detalle
+    var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showMessages by rememberSaveable { mutableStateOf(false) }
 
     // Todo el estado del catálogo vive en el ViewModel; la pantalla solo lo dibuja
     val vm: CatalogViewModel = viewModel()
@@ -68,6 +71,15 @@ fun StudentHomeScreen(
         }
     }
 
+    LaunchedEffect(selectedPropertyDetail) {
+        selectedPropertyDetail?.let { detailId = it.id }
+    }
+    LaunchedEffect(detailId, ui.propiedades, ui.favoritas) {
+        if (selectedPropertyDetail == null && detailId != null) {
+            selectedPropertyDetail = (ui.propiedades + ui.favoritas).firstOrNull { it.id == detailId }
+        }
+    }
+
     if (showMessages) {
         MessagesScreen(onBack = { showMessages = false })
         return
@@ -77,7 +89,7 @@ fun StudentHomeScreen(
     if (selectedPropertyDetail != null) {
         PropertyDetailScreen(
             property = selectedPropertyDetail!!,
-            onBack = { selectedPropertyDetail = null },
+            onBack = { selectedPropertyDetail = null; detailId = null },
             onToggleFavorite = { prop ->
                 vm.alternarFavorito(prop)
                 selectedPropertyDetail = selectedPropertyDetail?.copy(isFavorite = !prop.isFavorite)
@@ -272,7 +284,14 @@ fun StudentCatalogContent(
                 OutlinedTextField(
                     value = searchText,
                     onValueChange = onSearchChange,
-                    placeholder = { Text("Buscar por zona o nombre...", fontSize = 14.sp) },
+                    placeholder = {
+                        Text(
+                            "Buscar zona o nombre",
+                            fontSize = 14.sp,
+                            maxLines = 1,
+                            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                        )
+                    },
                     leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = TextSecondary) },
                     trailingIcon = if (searchText.isNotEmpty()) {
                         {

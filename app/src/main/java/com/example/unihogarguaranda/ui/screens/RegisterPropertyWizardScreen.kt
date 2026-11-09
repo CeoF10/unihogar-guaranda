@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,38 +67,38 @@ fun RegisterPropertyWizardScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var step by remember { mutableStateOf(1) }
-    var error by remember { mutableStateOf<String?>(null) }
+    var step by rememberSaveable { mutableStateOf(1) }
+    var error by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Paso 1
-    var titulo by remember { mutableStateOf("") }
-    var tipo by remember { mutableStateOf("Habitación") }
-    var direccion by remember { mutableStateOf("") }
-    var dormitorios by remember { mutableStateOf(1) }
-    var descripcion by remember { mutableStateOf("") }
+    var titulo by rememberSaveable { mutableStateOf("") }
+    var tipo by rememberSaveable { mutableStateOf("Habitación") }
+    var direccion by rememberSaveable { mutableStateOf("") }
+    var dormitorios by rememberSaveable { mutableStateOf(1) }
+    var descripcion by rememberSaveable { mutableStateOf("") }
 
     // Paso 2
-    var lat by remember { mutableStateOf<Double?>(null) }
-    var lng by remember { mutableStateOf<Double?>(null) }
-    var precision by remember { mutableStateOf<Float?>(null) }
-    var manual by remember { mutableStateOf(false) }
+    var lat by rememberSaveable { mutableStateOf<Double?>(null) }
+    var lng by rememberSaveable { mutableStateOf<Double?>(null) }
+    var precision by rememberSaveable { mutableStateOf<Float?>(null) }
+    var manual by rememberSaveable { mutableStateOf(false) }
     var capturando by remember { mutableStateOf(false) }
     val dentro = lat != null && lng != null && GuarandaGeofenceValidator.isWithinGuaranda(lat!!, lng!!)
 
     // Paso 3
-    var precio by remember { mutableStateOf("") }
-    var deposito by remember { mutableStateOf("") }
+    var precio by rememberSaveable { mutableStateOf("") }
+    var deposito by rememberSaveable { mutableStateOf("") }
     val servicios = remember { mutableStateListOf<String>() }
     val cargos = remember { mutableStateListOf<CargoForm>() }
-    var contacto by remember { mutableStateOf("") }
+    var contacto by rememberSaveable { mutableStateOf("") }
 
     // Paso 4
     val fotos = remember { mutableStateListOf<Uri>() }
-    var declarado by remember { mutableStateOf(false) }
+    var declarado by rememberSaveable { mutableStateOf(false) }
     var enviando by remember { mutableStateOf(false) }
     var progreso by remember { mutableStateOf("") }
-    var idCreado by remember { mutableStateOf<Long?>(null) }
-    var fotosSubidas by remember { mutableStateOf(false) }
+    var idCreado by rememberSaveable { mutableStateOf<Long?>(null) }
+    var fotosSubidas by rememberSaveable { mutableStateOf(false) }
 
     fun capturarGps() {
         capturando = true
