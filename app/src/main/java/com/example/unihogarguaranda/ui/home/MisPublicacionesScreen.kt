@@ -148,7 +148,9 @@ fun MisPublicacionesScreen(onBack: () -> Unit) {
                                     colors = ButtonDefaults.buttonColors(containerColor = RedUEB)
                                 ) { Text("Publicar") }
                             }
-                            if (anuncio.estado == "DISPONIBLE" || anuncio.estado == "PAUSADO") {
+                            if (anuncio.ocultoPorAdmin == true) {
+                                Text("Oculto por Bienestar UEB")
+                            } else if (anuncio.estado == "DISPONIBLE" || anuncio.estado == "PAUSADO") {
                                 val pausado = anuncio.estado == "PAUSADO"
                                 OutlinedButton(onClick = {
                                     scope.launch {

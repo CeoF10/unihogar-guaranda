@@ -97,6 +97,7 @@ fun RegisterPropertyWizardScreen(
     var enviando by remember { mutableStateOf(false) }
     var progreso by remember { mutableStateOf("") }
     var idCreado by remember { mutableStateOf<Long?>(null) }
+    var fotosSubidas by remember { mutableStateOf(false) }
 
     fun capturarGps() {
         capturando = true
@@ -155,7 +156,8 @@ fun RegisterPropertyWizardScreen(
         lng = lng!!,
         precisionGpsM = if (manual) null else precision?.toDouble(),
         origen = if (manual) "MANUAL" else "GPS",
-        cargos = cargos.map { CargoResponse(it.nombre.trim(), if (it.porConfirmar) null else it.monto.toDoubleOrNull()) }
+        cargos = cargos.map { CargoResponse(it.nombre.trim(), if (it.porConfirmar) null else it.monto.toDoubleOrNull()) },
+        contacto = contacto.trim().ifEmpty { null }
     )
 
     // Crea el inmueble (una sola vez), sube las fotos y lo envía a auditoría
@@ -171,19 +173,21 @@ fun RegisterPropertyWizardScreen(
                     if (!r.isSuccessful) throw IllegalStateException(ApiClient.errorMessage(r.errorBody()?.string(), "No se pudo guardar"))
                     r.body()!!.id.also { idCreado = it }
                 }
-                if (contacto.isNotBlank()) {
-                    ApiClient.service.editarInmueble(auth, id, com.example.unihogarguaranda.data.EditarInmuebleRequest(contacto = contacto.trim()))
-                }
                 if (soloBorrador) {
                     onFinished("Borrador guardado. Puede subir fotos y publicarlo desde Mis publicaciones.")
                     return@launch
                 }
-                progreso = "Subiendo ${fotos.size} foto(s)..."
-                val partes = prepararFotos(context, fotos.toList())
-                if (partes.isEmpty()) throw IllegalStateException("Las fotos no son válidas (JPEG, PNG o WebP de máximo 5 MB)")
-                val rf = ApiClient.service.subirFotos(auth, id, partes)
-                if (!rf.isSuccessful) throw IllegalStateException(ApiClient.errorMessage(rf.errorBody()?.string(), "No se pudieron subir las fotos"))
-                fotos.clear()
+                if (fotos.isNotEmpty()) {
+                    progreso = "Subiendo ${fotos.size} foto(s)..."
+                    val partes = prepararFotos(context, fotos.toList())
+                    if (partes.size != fotos.size) {
+                        throw IllegalStateException("Revise las fotos: deben ser JPEG, PNG o WebP de máximo 5 MB")
+                    }
+                    val rf = ApiClient.service.subirFotos(auth, id, partes)
+                    if (!rf.isSuccessful) throw IllegalStateException(ApiClient.errorMessage(rf.errorBody()?.string(), "No se pudieron subir las fotos"))
+                    fotosSubidas = true
+                    fotos.clear()
+                }
                 progreso = "Enviando a auditoría..."
                 val rp = ApiClient.service.publicar(auth, id)
                 if (!rp.isSuccessful) throw IllegalStateException(ApiClient.errorMessage(rp.errorBody()?.string(), "No se pudo publicar"))
@@ -244,7 +248,7 @@ fun RegisterPropertyWizardScreen(
                         if (step > 1) {
                             OutlinedButton(
                                 onClick = { step--; error = null },
-                                enabled = !enviando,
+                                enabled = !enviando && idCreado == null,
                                 modifier = Modifier.weight(1f).height(50.dp),
                                 shape = RoundedCornerShape(25.dp)
                             ) { Text("Atrás") }
@@ -254,7 +258,7 @@ fun RegisterPropertyWizardScreen(
                                 if (step < 4) {
                                     val e = validarPaso()
                                     if (e == null) { step++; error = null } else error = e
-                                } else if (fotos.isEmpty()) {
+                                } else if (fotos.isEmpty() && !fotosSubidas) {
                                     error = "Agregue al menos una foto para publicar"
                                 } else if (!declarado) {
                                     error = "Confirme la declaración para publicar"
@@ -424,11 +428,12 @@ fun RegisterPropertyWizardScreen(
                                 }
                                 IconButton(
                                     onClick = { fotos.removeAt(i) },
+                                    enabled = !enviando,
                                     modifier = Modifier.align(Alignment.TopEnd).padding(4.dp).size(26.dp).clip(CircleShape).background(Color.Black.copy(alpha = 0.55f))
                                 ) { Icon(Icons.Default.Close, "Quitar foto", tint = Color.White, modifier = Modifier.size(16.dp)) }
                             }
                         }
-                        if (fotos.size < MAX_FOTOS) {
+                        if (fotos.size < MAX_FOTOS && !fotosSubidas && !enviando) {
                             Box(
                                 modifier = Modifier
                                     .size(100.dp)
@@ -447,6 +452,8 @@ fun RegisterPropertyWizardScreen(
                             }
                         }
                     }
+
+                    if (fotosSubidas) Text("Las fotos ya están guardadas en el borrador.")
 
                     // Resumen antes de publicar
                     Card(colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {

@@ -7,7 +7,7 @@ package com.example.unihogarguaranda.util
 object CedulaValidator {
 
     fun esValida(cedula: String): Boolean {
-        if (cedula.length != 10 || !cedula.all { it.isDigit() }) return false
+        if (cedula.length != 10 || cedula.any { it !in '0'..'9' }) return false
         val provincia = cedula.substring(0, 2).toInt()
         if (provincia < 1 || provincia > 24) return false
         if (cedula[2].digitToInt() >= 6) return false

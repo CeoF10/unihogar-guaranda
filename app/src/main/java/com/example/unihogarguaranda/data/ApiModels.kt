@@ -25,6 +25,7 @@ data class InmuebleResponse(
     val lng: Double,
     val estado: String?,
     val verificado: Boolean? = null,
+    val ocultoPorAdmin: Boolean? = null,
     val distanciaCampusKm: Double? = null,
     val contacto: String? = null,
     val costos: CostosResponse? = null,
@@ -44,7 +45,8 @@ data class NuevoInmuebleRequest(
     val lng: Double,
     val precisionGpsM: Double?,
     val origen: String = "GPS",
-    val cargos: List<CargoResponse> = emptyList()
+    val cargos: List<CargoResponse> = emptyList(),
+    val contacto: String? = null
 )
 
 data class NuevoInmuebleResponse(val id: Long, val estado: String)
