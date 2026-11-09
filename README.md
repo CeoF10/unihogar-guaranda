@@ -1,69 +1,39 @@
-# UniHogar Guaranda — App Móvil Android
+# UniHogar Guaranda
 
-> 🎓 **Proyecto Académico** | Universidad Estatal de Bolívar  
-> • **Materia:** Desarrollo de Software Móvil (Programación Móvil)  
-> • **Ciclo:** 6to Ciclo "A" — Ingeniería de Software  
+App Android para consultar y publicar arriendos estudiantiles cerca de los campus de la Universidad Estatal de Bolívar en Guaranda. Proyecto académico de Sebastian Velastegui y Neicer Jimenez.
 
-> Propuesta técnica y arquitectónica para el Producto Mínimo Viable (MVP) móvil de arriendos estudiantiles.  
-> Universidad Estatal de Bolívar — Carrera de Software — Sexto Ciclo "A".
+[Ver los repositorios del sistema UniHogar](https://github.com/CeoF10/unihogar).
 
----
+## Qué incluye la app
 
-## Integrantes
-* Sebastian Velastegui
-* Neicer Jimenez
----
+| Perfil | Pantallas disponibles |
+|---|---|
+| Estudiante | Catálogo, detalle de inmuebles, mapa, favoritos, mensajes y perfil |
+| Propietario | Inicio con anuncios propios y expediente, mensajes y perfil |
 
-## Descripción del Proyecto
-La búsqueda de vivienda estudiantil en Guaranda suele ser un proceso disperso e informal. **UniHogar Guaranda** busca centralizar la oferta de habitaciones, departamentos y casas cerca de los campus de la **Universidad Estatal de Bolívar (UEB)**, bajo un modelo similar al de Airbnb.
+La app usa Kotlin, Jetpack Compose y Material 3. Consume la API REST de UniHogar con Retrofit, carga imágenes con Coil y muestra mapas con osmdroid. Los servicios de ubicación se integran mediante Google Play Services.
 
-* **Estudiantes:** Validación mediante correo institucional (`@ueb.edu.ec`), catálogo georreferenciado con mapas, filtros avanzados, comparador de hasta 3 viviendas y coordinación de visitas.
-* **Propietarios:** Registro con correo personal, publicación y administración de inmuebles, subida de fotos, especificación de costos transparentes (arriendo, servicios y garantía) y gestión de visitas.
+El plan académico original contemplaba comparar hasta tres inmuebles y coordinar visitas. La lista anterior recoge las pantallas identificadas en el código actual.
 
----
+## Ejecutar en Android Studio
 
-## Stack Tecnológico y Arquitectura
+1. Clona este repositorio y abre su carpeta raíz en Android Studio.
+2. Instala Android SDK 37 y sincroniza Gradle. La app requiere Android API 24 o superior en el dispositivo o emulador.
+3. Levanta la base de datos y la API siguiendo la [guía del sistema UniHogar](https://github.com/CeoF10/unihogar#entorno-local). Se necesita acceso a esos repositorios para probar los flujos con datos.
+4. Ejecuta la configuración `app` en el emulador. La URL predeterminada es `http://10.0.2.2:3000/api/`, donde `10.0.2.2` apunta al equipo anfitrión.
 
-Arquitectura Cliente-Servidor estructurada en capas independientes:
+En un teléfono físico, conecta el teléfono y tu equipo a la misma red y agrega esta propiedad a `local.properties`. Sustituye la IP del ejemplo por la de tu equipo y conserva la barra final.
 
-| Capa / Componente | Tecnología | Responsabilidad |
-| :--- | :--- | :--- |
-| **Frontend Móvil** | **Kotlin + Jetpack Compose** (Material 3) | UI declarativa nativa Android, MVVM, StateFlow y persistencia local con **Room** (caché offline). |
-| **Backend API REST** | **Spring Boot 3 + Kotlin** | Endpoints RESTful, seguridad con **JWT**, control de acceso por roles y lógica de negocio. |
-| **Base de Datos** | **PostgreSQL 16** | Modelo relacional 3FN con soporte espacial para georreferenciación. |
-| **Servicios Externos** | **Google Maps SDK for Android** | Renderizado de mapas interactivos, marcadores de inmuebles y campus universitarios. |
-| **Notificaciones** | **Firebase Cloud Messaging (FCM)** | Alertas push sobre solicitudes y estados de visita. |
-| **Contacto** | **WhatsApp API / Intent** | Apertura de chat directo con mensaje contextual del anuncio. |
+```properties
+API_BASE_URL=http://192.168.1.20:3000/api/
+```
 
----
+Para generar un APK de depuración desde Linux:
 
-## Funcionalidades Principales
+```bash
+./gradlew :app:assembleDebug
+```
 
-- Cuentas y perfiles: Roles diferenciados (Estudiante / Propietario / Admin).
-- Gestión de Inmuebles: Publicación, edición, pausa y marcado de arriendo.
-- Catálogo con Filtros: Por rango de precio, tipo de inmueble, servicios y distancia al campus.
-- Mapa Interactivo: Visualización de viviendas y sedes universitarias con selector manual de coordenadas.
-- Costo Transparente: Diferenciación clara entre canon mensual, servicios y depósito.
-- Comparador de Viviendas: Comparativa lado a lado de hasta 3 opciones.
-- Gestión de Visitas: Solicitud, aceptación, rechazo o reprogramación.
-- Favoritos: Guardado en local/remoto para acceso rápido.
+## Primera prueba
 
----
-
-## Planificación y Entregables (Semanas 7 a 16)
-
-* **Semana 7:** Cierre de alcance, diagramas, bocetos en Figma y pruebas de Google Maps SDK.
-* **Semana 8:** Setup de proyectos (Compose + Spring Boot + PostgreSQL), autenticación y JWT.
-* **Semana 9:** Permisos, gestión de inmuebles básica y subida de fotografías.
-* **Semana 10:** Catálogo interactivo, paginación y filtros dinámicos.
-* **Semana 11:** Integración de Google Maps SDK, marcadores y permisos de GPS.
-* **Semana 12:** Sistema de favoritos y visualización de costos desglosados.
-* **Semana 13:** Comparador de 3 viviendas y módulo de solicitudes de visita.
-* **Semana 14:** Pruebas de usuario, reportes y módulo visual complementario (360°).
-* **Semana 15:** Congelamiento de código, corrección de bugs y validación de respaldo de BD.
-* **Semana 16:** Generación de APK demostrable, informe final y sustentación.
-
----
-
-## Licencia
-Este proyecto es desarrollado con fines académicos para la Universidad Estatal de Bolívar.
+Con la API activa y una cuenta de prueba, entra como estudiante y abre un inmueble desde el catálogo. Comprueba el detalle, la ubicación en el mapa y la lista de favoritos. Con una cuenta de propietario, comprueba que la pantalla inicial muestre sus anuncios.
