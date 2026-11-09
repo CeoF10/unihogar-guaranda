@@ -194,6 +194,8 @@ fun StudentHomeScreen(
                 onToggleFavorite = vm::alternarFavorito,
                 total = ui.total,
                 emptyMessage = ui.mensajeVacio,
+                loading = ui.cargando,
+                loadingMore = ui.cargandoMas,
                 onLoadMore = vm::cargarMas
             )
             1 -> InteractiveMapScreen(
@@ -241,6 +243,8 @@ fun StudentCatalogContent(
     onToggleFavorite: (Property) -> Unit,
     total: Int = properties.size,
     emptyMessage: String? = null,
+    loading: Boolean = false,
+    loadingMore: Boolean = false,
     onLoadMore: (() -> Unit)? = null
 ) {
     LazyColumn(
@@ -430,7 +434,16 @@ fun StudentCatalogContent(
             }
         }
 
-        if (properties.isEmpty()) {
+        if (loading) {
+            item {
+                Row(Modifier.fillMaxWidth().padding(24.dp), horizontalArrangement = Arrangement.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), color = BlueUEB)
+                    Spacer(Modifier.width(12.dp))
+                    Text("Cargando alojamientos…", color = TextSecondary)
+                }
+            }
+        }
+        if (properties.isEmpty() && !loading) {
             item {
                 Card(
                     shape = RoundedCornerShape(16.dp),
@@ -469,7 +482,7 @@ fun StudentCatalogContent(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "El catálogo de alojamientos se habilitará en las siguientes entregas cuando los propietarios publiquen sus ofertas.",
+                            text = "Pruebe con otra búsqueda o ajuste los filtros para encontrar alojamientos disponibles.",
                             fontSize = 13.sp,
                             color = TextSecondary,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -502,8 +515,8 @@ fun StudentCatalogContent(
 
         if (onLoadMore != null && properties.size < total) {
             item {
-                OutlinedButton(onClick = onLoadMore, modifier = Modifier.fillMaxWidth()) {
-                    Text("Cargar más (${total - properties.size} restantes)")
+                OutlinedButton(onClick = onLoadMore, enabled = !loading && !loadingMore, modifier = Modifier.fillMaxWidth()) {
+                    Text(if (loadingMore) "Cargando…" else "Cargar más (${total - properties.size} restantes)")
                 }
             }
         }

@@ -24,6 +24,7 @@ data class CatalogUiState(
     val busqueda: String = "",
     val mensajeVacio: String? = null,
     val cargando: Boolean = true,
+    val cargandoMas: Boolean = false,
     val error: String? = null
 )
 
@@ -40,6 +41,8 @@ class CatalogViewModel(application: Application) : AndroidViewModel(application)
     private val favoritos: Set<Long> get() = _ui.value.favoritas.map { it.id }.toSet()
     private var busquedaJob: Job? = null
     private var cargaJob: Job? = null
+    private var paginaJob: Job? = null
+    private val favoritosEnCurso = mutableSetOf<Long>()
 
     init {
         cargar()
@@ -72,9 +75,10 @@ class CatalogViewModel(application: Application) : AndroidViewModel(application)
     fun recargar() = cargar()
 
     private fun cargar() {
+        paginaJob?.cancel()
         cargaJob?.cancel()
         cargaJob = viewModelScope.launch {
-            _ui.update { it.copy(cargando = true) }
+            _ui.update { it.copy(cargando = true, cargandoMas = false, error = null) }
             val favs = repo.favoritos().map { it.toProperty(isFavorite = true) }
             _ui.update { it.copy(favoritas = favs) }
             repo.catalogo(_ui.value.filtro, 1)
@@ -96,29 +100,37 @@ class CatalogViewModel(application: Application) : AndroidViewModel(application)
     // RF06: la siguiente página se pide solo cuando el usuario la necesita
     fun cargarMas() {
         val estado = _ui.value
-        if (estado.propiedades.size >= estado.total) return
-        viewModelScope.launch {
+        if (estado.cargando || estado.cargandoMas || estado.propiedades.size >= estado.total) return
+        _ui.update { it.copy(cargandoMas = true, error = null) }
+        paginaJob = viewModelScope.launch {
             repo.catalogo(estado.filtro, estado.pagina + 1)
                 .onSuccess { p ->
                     _ui.update {
                         it.copy(
-                            propiedades = it.propiedades + p.items.map { i -> i.toProperty(isFavorite = i.id in favoritos) },
-                            pagina = p.page
+                            propiedades = (it.propiedades + p.items.map { i -> i.toProperty(isFavorite = i.id in favoritos) }).distinctBy { it.id },
+                            pagina = p.page,
+                            total = p.total,
+                            cargandoMas = false
                         )
                     }
                 }
-                .onFailure { e -> _ui.update { it.copy(error = e.message) } }
+                .onFailure { e -> _ui.update { it.copy(cargandoMas = false, error = e.message) } }
         }
     }
 
     // RF09: se marca al instante y, si la API falla, se revierte
     fun alternarFavorito(propiedad: Property) {
-        val nuevo = !propiedad.isFavorite
+        if (!favoritosEnCurso.add(propiedad.id)) return
+        val nuevo = propiedad.id !in favoritos
         marcar(propiedad, nuevo)
         viewModelScope.launch {
-            repo.setFavorito(propiedad.id, nuevo).onFailure { e ->
-                marcar(propiedad, !nuevo)
-                _ui.update { it.copy(error = e.message) }
+            try {
+                repo.setFavorito(propiedad.id, nuevo).onFailure { e ->
+                    marcar(propiedad, !nuevo)
+                    _ui.update { it.copy(error = e.message) }
+                }
+            } finally {
+                favoritosEnCurso.remove(propiedad.id)
             }
         }
     }
