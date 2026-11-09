@@ -64,6 +64,8 @@ data class RegisterRequest(
 
 data class EmailRequest(val email: String)
 
+data class PasswordRequest(val password: String)
+
 data class CargoResponse(val nombre: String, val monto: Double?)
 
 data class CostosResponse(

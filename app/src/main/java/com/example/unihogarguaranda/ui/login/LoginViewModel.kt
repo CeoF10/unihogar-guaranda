@@ -9,7 +9,6 @@ import com.example.unihogarguaranda.data.LoginRequest
 import com.example.unihogarguaranda.data.RegisterRequest
 import com.example.unihogarguaranda.data.Session
 import com.example.unihogarguaranda.util.CedulaValidator
-import com.example.unihogarguaranda.model.RegistroCivilService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -61,48 +60,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             it.copy(
                 identificationNumber = filtered, 
                 isCedulaValid = isValid,
-                registroCivilNombres = null,
                 errorMessage = null 
             ) 
-        }
-
-        if (isValid) {
-            consultarRegistroCivil(filtered)
-        }
-    }
-
-    private fun consultarRegistroCivil(cedula: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isConsultandoRegistroCivil = true) }
-            delay(500)
-
-            val response = RegistroCivilService.consultarCedula(cedula)
-            if (response != null) {
-                _uiState.update { 
-                    it.copy(
-                        isConsultandoRegistroCivil = false,
-                        registroCivilNombres = response.nombresCompletos,
-                        name = if (it.name.isBlank()) response.nombresCompletos else it.name
-                    ) 
-                }
-            } else {
-                _uiState.update { it.copy(isConsultandoRegistroCivil = false) }
-            }
-        }
-    }
-
-    fun performBiometricScan() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            delay(800)
-
-            _uiState.update { 
-                it.copy(
-                    isLoading = false,
-                    isBiometricApproved = true,
-                    biometricScore = 96
-                ) 
-            }
         }
     }
 
@@ -271,13 +230,6 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                 }
                 return
             }
-
-            if (!currentState.isBiometricApproved) {
-                _uiState.update { 
-                    it.copy(errorMessage = "Debe completar la prueba biométrica facial para validar su identidad.") 
-                }
-                return
-            }
         }
 
         if (currentState.email.isBlank()) {
@@ -333,7 +285,6 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     it.copy(
                         isLoading = false,
                         isRegisterMode = false,
-                        identityStatus = OwnerIdentityStatus.VERIFICADO,
                         successMessage = "Cuenta creada. Revise su correo (${currentState.email}) para confirmarla antes de iniciar sesión."
                     )
                 }

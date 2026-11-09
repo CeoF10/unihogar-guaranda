@@ -17,9 +17,26 @@ android {
         rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
     }
 
+    // Clave de firma para Google Play: keystore.properties (fuera de git) con storeFile,
+    // storePassword, keyAlias y keyPassword. Sin ese archivo, release se firma con la clave de depuración.
+    val keystoreProps = Properties().apply {
+        rootProject.file("keystore.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
+    }
+
+    signingConfigs {
+        if (keystoreProps.getProperty("storeFile") != null) {
+            create("upload") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     defaultConfig {
-        buildConfigField("String", "API_BASE_URL", "\"${localProps.getProperty("API_BASE_URL", "http://10.0.2.2:3000/api/")}\"")
-        applicationId = "com.example.unihogarguaranda"
+        // Identificador permanente en Google Play: no se puede cambiar después de publicar
+        applicationId = "io.github.ceof10.unihogar"
         minSdk = 24
         targetSdk = 37
         versionCode = 1
@@ -29,9 +46,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Desarrollo: API local (adb reverse / emulador). Se instala junto a la versión de Play.
+            applicationIdSuffix = ".debug"
+            buildConfigField("String", "API_BASE_URL", "\"${localProps.getProperty("API_BASE_URL", "http://10.0.2.2:3000/api/")}\"")
+        }
         release {
-            // Para pruebas se firma con la clave de depuración; para Google Play se usa una clave propia
-            signingConfig = signingConfigs.getByName("debug")
+            // Producción: API publicada con HTTPS
+            buildConfigField(
+                "String", "API_BASE_URL",
+                "\"${localProps.getProperty("API_BASE_URL_RELEASE", "https://unihogar-api.onrender.com/api/")}\""
+            )
+            signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
             optimization {
                 enable = true
                 keepRules {

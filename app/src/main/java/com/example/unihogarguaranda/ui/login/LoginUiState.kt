@@ -9,18 +9,9 @@ enum class UserRole(val label: String) {
 }
 
 /**
- * Estados de verificación de la identidad del Propietario.
- */
-enum class OwnerIdentityStatus(val label: String) {
-    PENDIENTE("Validación de Identidad Pendiente"),
-    VERIFICADO("Identidad Civil y Biométrica Verificada"),
-    RECHAZADO("Identidad No Coincidente")
-}
-
-/**
  * Estado del formulario de Registro e Inicio de Sesión de Usuario.
  * Flujo desacoplado:
- * - Fase 1 (Login/Registro): Registro del usuario, validación con Registro Civil y Biometría facial.
+ * - Fase 1 (Login/Registro): Registro del usuario; el propietario indica su cédula (validada con Módulo 10).
  * - Fase 2 (Post-Login): El registro del inmueble y los documentos prediales/GPS se realizan por pasos en su propio panel.
  */
 data class LoginUiState(
@@ -45,14 +36,6 @@ data class LoginUiState(
     // ========================================================================
     val identificationNumber: String = "", // Cédula ecuatoriana 10 dígitos
     val isCedulaValid: Boolean = false,
-    val registroCivilNombres: String? = null,
-    val isConsultandoRegistroCivil: Boolean = false,
-
-    // Prueba de vida biométrica (Rostro + Cédula)
-    val isBiometricApproved: Boolean = false,
-    val biometricScore: Int = 0,
-
-    val identityStatus: OwnerIdentityStatus = OwnerIdentityStatus.PENDIENTE,
 
     // Recuperación de Acceso (RF02)
     val showForgotPasswordDialog: Boolean = false,

@@ -74,7 +74,7 @@ fun OwnerHomeScreen(
             return
         }
         showMessages -> {
-            MessagesScreen(onBack = { showMessages = false })
+            MessagesScreen(onBack = { showMessages = false }, esPropietario = true)
             return
         }
     }

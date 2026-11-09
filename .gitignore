@@ -28,3 +28,8 @@ bin/
 .DS_Store
 Thumbs.db
 database/
+
+# Firma de Google Play (nunca subir)
+keystore.properties
+*.jks
+*.keystore

@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.unihogarguaranda.data.Session
+import com.example.unihogarguaranda.data.PasswordRequest
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.unihogarguaranda.data.ApiClient
 import com.example.unihogarguaranda.data.EmailRequest
@@ -33,7 +34,8 @@ val studentOptions = listOf(
     ProfileOption(Icons.Default.Favorite, "Mis favoritos"),
     ProfileOption(Icons.Default.ChatBubbleOutline, "Mensajes"),
     ProfileOption(Icons.Default.Settings, "Configuración"),
-    ProfileOption(Icons.Default.HelpOutline, "Ayuda")
+    ProfileOption(Icons.Default.HelpOutline, "Ayuda"),
+    ProfileOption(Icons.Default.DeleteOutline, "Eliminar cuenta")
 )
 
 // Opciones exclusivas del propietario
@@ -59,6 +61,9 @@ fun FullProfileScreen(
     }
     var dialogo by rememberSaveable { mutableStateOf<String?>(null) }
     var mensajeClave by rememberSaveable { mutableStateOf<String?>(null) }
+    var claveEliminar by remember { mutableStateOf("") }
+    var errorEliminar by remember { mutableStateOf<String?>(null) }
+    var eliminando by remember { mutableStateOf(false) }
 
     when (dialogo) {
         "Configuración" -> AlertDialog(
@@ -88,6 +93,56 @@ fun FullProfileScreen(
                 }) { Text("Cambiar contraseña") }
             },
             dismissButton = { TextButton(onClick = { dialogo = null; mensajeClave = null }) { Text("Cerrar") } }
+        )
+        "Eliminar cuenta" -> AlertDialog(
+            onDismissRequest = { if (!eliminando) { dialogo = null; claveEliminar = ""; errorEliminar = null } },
+            title = { Text("Eliminar cuenta", fontWeight = FontWeight.Bold, color = RedUEB) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        "Se borrarán para siempre tu cuenta, tus favoritos, tus anuncios con sus fotos y tu expediente. No se puede deshacer.",
+                        fontSize = 13.sp, color = TextSecondary
+                    )
+                    OutlinedTextField(
+                        value = claveEliminar,
+                        onValueChange = { claveEliminar = it; errorEliminar = null },
+                        label = { Text("Contraseña") },
+                        singleLine = true,
+                        visualTransformation = androidx.compose.ui.text.input.PasswordVisualTransformation(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    errorEliminar?.let { Text(it, color = RedUEB, fontSize = 12.sp) }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = claveEliminar.isNotEmpty() && !eliminando,
+                    onClick = {
+                        scope.launch {
+                            eliminando = true
+                            val bearer = Session.bearer(context)
+                            try {
+                                val r = if (bearer == null) null
+                                else ApiClient.service.eliminarCuenta(bearer, PasswordRequest(claveEliminar))
+                                if (r?.isSuccessful == true) {
+                                    dialogo = null
+                                    android.widget.Toast.makeText(context, "Tu cuenta fue eliminada", android.widget.Toast.LENGTH_LONG).show()
+                                    onLogout()
+                                } else {
+                                    errorEliminar = ApiClient.errorMessage(r?.errorBody()?.string(), "No se pudo eliminar la cuenta.")
+                                }
+                            } catch (e: IOException) {
+                                errorEliminar = "Sin conexión con el servidor UniHogar."
+                            } finally {
+                                eliminando = false
+                            }
+                        }
+                    }
+                ) { Text(if (eliminando) "Eliminando…" else "Eliminar", color = RedUEB, fontWeight = FontWeight.Bold) }
+            },
+            dismissButton = {
+                TextButton(enabled = !eliminando, onClick = { dialogo = null; claveEliminar = ""; errorEliminar = null }) { Text("Cancelar") }
+            }
         )
         "Ayuda" -> AlertDialog(
             onDismissRequest = { dialogo = null },
@@ -191,7 +246,7 @@ fun FullProfileScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        if (option.title == "Ayuda" || option.title == "Configuración") dialogo = option.title
+                        if (option.title in setOf("Ayuda", "Configuración", "Eliminar cuenta")) dialogo = option.title
                         else onOptionClick(option.title)
                     },
                 shadowElevation = 1.dp

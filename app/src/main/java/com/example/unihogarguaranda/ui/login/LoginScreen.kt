@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.unihogarguaranda.R
-import com.example.unihogarguaranda.ui.components.CameraBiometricCaptureDialog
 import com.example.unihogarguaranda.ui.theme.*
 
 /**
@@ -52,17 +51,6 @@ fun LoginScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val focusManager = LocalFocusManager.current
-    var showCameraDialog by remember { mutableStateOf(false) }
-
-    if (showCameraDialog) {
-        CameraBiometricCaptureDialog(
-            onDismiss = { showCameraDialog = false },
-            onBiometricConfirmed = {
-                showCameraDialog = false
-                viewModel.performBiometricScan()
-            }
-        )
-    }
 
     if (uiState.isSuccess) {
         onLoginSuccess(uiState.role, uiState.email)
@@ -251,28 +239,19 @@ fun LoginScreen(
                             Icon(imageVector = Icons.Default.CreditCard, contentDescription = null, tint = BlueUEB, modifier = Modifier.size(18.dp))
                         },
                         trailingIcon = {
-                            if (uiState.isConsultandoRegistroCivil) {
-                                CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp, color = BlueUEB)
-                            } else if (uiState.isCedulaValid) {
+                            if (uiState.isCedulaValid) {
                                 Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Cédula Válida", tint = Color(0xFF10B981))
                             }
                         },
                         supportingText = {
                             if (uiState.identificationNumber.length == 10) {
-                                if (uiState.registroCivilNombres != null) {
-                                    Text(
-                                        text = "Registro Civil: ${uiState.registroCivilNombres} (ACTIVO)",
-                                        color = Color(0xFF065F46),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                } else {
-                                    Text(
-                                        text = if (uiState.isCedulaValid) "Algoritmo Módulo 10 válido" else "Cédula no válida en Registro Civil",
-                                        color = if (uiState.isCedulaValid) Color(0xFF10B981) else RedUEB,
-                                        fontSize = 11.sp
-                                    )
-                                }
+                                Text(
+                                    text = if (uiState.isCedulaValid) "Cédula válida" else "Cédula no válida",
+                                    color = if (uiState.isCedulaValid) Color(0xFF047857) else RedUEB,
+                                    fontSize = 11.sp
+                                )
+                            } else {
+                                Text("Bienestar UEB verifica su identidad con el expediente que suba después.", fontSize = 11.sp, color = TextSecondary)
                             }
                         },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -288,66 +267,6 @@ fun LoginScreen(
                         shape = RoundedCornerShape(14.dp)
                     )
 
-                    // Prueba Biométrica KYC (Selfie con Cédula al lado del rostro)
-                    Card(
-                        shape = RoundedCornerShape(14.dp),
-                        colors = CardDefaults.cardColors(containerColor = if (uiState.isBiometricApproved) Color(0xFFD1FAE5) else Color.White),
-                        border = BorderStroke(1.dp, if (uiState.isBiometricApproved) Color(0xFF10B981) else DividerColor),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(modifier = Modifier.padding(14.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.Face,
-                                        contentDescription = null,
-                                        tint = if (uiState.isBiometricApproved) Color(0xFF065F46) else BlueUEB,
-                                        modifier = Modifier.size(22.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = "Foto de verificación",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = if (uiState.isBiometricApproved) Color(0xFF065F46) else TextPrimary
-                                    )
-                                }
-                                if (uiState.isBiometricApproved) {
-                                    Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFF10B981)) {
-                                        Text("Listo", color = Color.White, fontSize = 10.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp))
-                                    }
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Tómese una foto sosteniendo su cédula junto al rostro. Bienestar UEB la revisa junto a su expediente.",
-                                fontSize = 11.sp,
-                                color = TextSecondary,
-                                lineHeight = 15.sp
-                            )
-                            Spacer(modifier = Modifier.height(10.dp))
-                            Button(
-                                onClick = { showCameraDialog = true },
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(10.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = if (uiState.isBiometricApproved) Color(0xFF047857) else BlueUEB
-                                )
-                            ) {
-                                Icon(Icons.Default.CameraAlt, contentDescription = null, modifier = Modifier.size(16.dp))
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (uiState.isBiometricApproved) "Foto tomada · Repetir" else "Tomar foto con la cámara",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                        }
-                    }
                 }
 
                 OutlinedTextField(

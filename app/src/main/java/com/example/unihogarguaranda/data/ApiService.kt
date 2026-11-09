@@ -26,6 +26,10 @@ interface ApiService {
     @POST("auth/recuperar")
     suspend fun recuperarClave(@Body body: EmailRequest): Response<MensajeResponse>
 
+    // Eliminación de cuenta (requisito de Google Play)
+    @POST("cuenta/eliminar")
+    suspend fun eliminarCuenta(@Header("Authorization") auth: String, @Body body: PasswordRequest): Response<MensajeResponse>
+
     // RF06 / RF07: catálogo con filtros y paginación
     @GET("inmuebles")
     suspend fun getInmuebles(
