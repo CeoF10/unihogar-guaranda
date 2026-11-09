@@ -1,6 +1,7 @@
 package com.example.unihogarguaranda.ui.home
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -33,31 +34,32 @@ import com.example.unihogarguaranda.ui.theme.*
 // Foto principal del inmueble o un marcador si todavía no tiene fotos
 @Composable
 fun FotoInmueble(property: Property, iconSize: Int = 42) {
-    if (property.fotoUrls.isNotEmpty()) {
-        AsyncImage(
-            model = property.fotoUrls.first(),
-            contentDescription = property.title,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        )
-    } else {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(listOf(Color(0xFFE8EEF7), Color(0xFFD5DFEC)))
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                imageVector = when (property.type) {
-                    "Habitación" -> Icons.Default.Bed
-                    "Departamento" -> Icons.Default.Apartment
-                    else -> Icons.Default.Home
-                },
-                contentDescription = null,
-                tint = BlueUEB.copy(alpha = 0.45f),
-                modifier = Modifier.size(iconSize.dp)
+    Box(
+        modifier = Modifier.fillMaxSize().background(
+            Brush.linearGradient(listOf(Color(0xFFE4EBF0), Color(0xFFF1EAE4)))
+        ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Surface(shape = RoundedCornerShape(22.dp), color = Color.White.copy(alpha = 0.65f)) {
+                Icon(
+                    imageVector = when (property.type) {
+                        "Habitación" -> Icons.Default.Bed
+                        "Departamento" -> Icons.Default.Apartment
+                        else -> Icons.Default.Home
+                    },
+                    contentDescription = null, tint = BlueUEB.copy(alpha = 0.55f),
+                    modifier = Modifier.padding(18.dp).size(iconSize.dp)
+                )
+            }
+            Text("Tu espacio en Guaranda", fontSize = 11.sp, color = BlueUEB.copy(alpha = 0.65f))
+        }
+        if (property.fotoUrls.isNotEmpty()) {
+            AsyncImage(
+                model = property.fotoUrls.first(),
+                contentDescription = property.title,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
             )
         }
     }
@@ -67,9 +69,10 @@ fun FotoInmueble(property: Property, iconSize: Int = 42) {
 @Composable
 fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+        border = BorderStroke(1.dp, DividerColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
@@ -78,7 +81,7 @@ fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(170.dp)
+                    .aspectRatio(1.65f)
             ) {
                 FotoInmueble(property)
 
@@ -98,15 +101,16 @@ fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                         )
                     }
-                    Surface(shape = RoundedCornerShape(8.dp), color = Color(0xFF047857)) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(Icons.Default.Verified, contentDescription = null, tint = Color.White, modifier = Modifier.size(12.dp))
-                            Spacer(modifier = Modifier.width(3.dp))
-                            Text("Verificado UEB", color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                        }
+                }
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = Color.White,
+                    modifier = Modifier.align(Alignment.BottomStart).padding(14.dp)
+                ) {
+                    Row(Modifier.padding(horizontal = 10.dp, vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Verified, null, tint = Color(0xFF047857), modifier = Modifier.size(14.dp))
+                        Spacer(Modifier.width(5.dp))
+                        Text("Verificado UEB", color = Color(0xFF047857), fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
 
@@ -115,7 +119,7 @@ fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(10.dp)
-                        .size(38.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .background(Color.White.copy(alpha = 0.95f))
                 ) {
@@ -145,7 +149,7 @@ fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -
                 }
             }
 
-            Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(modifier = Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
                     text = property.title,
                     fontSize = 16.sp,
@@ -186,18 +190,18 @@ fun PropertyCard(property: Property, onClick: () -> Unit, onToggleFavorite: () -
                     }
                 }
 
-                Row(verticalAlignment = Alignment.Bottom) {
+                HorizontalDivider(color = DividerColor)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "$${property.price.toInt()}",
+                        text = java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US).format(property.price),
                         fontSize = 22.sp,
                         fontWeight = FontWeight.Black,
                         color = BlueUEB
                     )
                     Text(" / mes", fontSize = 12.sp, color = TextSecondary, modifier = Modifier.padding(bottom = 3.dp))
-                    Spacer(modifier = Modifier.weight(1f))
                     property.costos?.let { costos ->
                         Text(
-                            text = costos.totalMensual?.let { "Total $${it.toInt()}" } ?: "Total por confirmar",
+                            text = costos.totalMensual?.let { "Total " + java.text.NumberFormat.getCurrencyInstance(java.util.Locale.US).format(it) } ?: "Total por confirmar",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = if (costos.totalMensual == null) RedUEB else TextSecondary,

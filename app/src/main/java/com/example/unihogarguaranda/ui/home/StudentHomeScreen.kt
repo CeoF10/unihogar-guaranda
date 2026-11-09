@@ -4,10 +4,12 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -104,21 +106,19 @@ fun StudentHomeScreen(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text("Uni", fontWeight = FontWeight.Black, fontSize = 22.sp, color = BlueUEB)
                         Text("Hogar", fontWeight = FontWeight.Black, fontSize = 22.sp, color = RedUEB)
-                        Text(" Guaranda", fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = BlueUEB)
+
                     }
                 },
                 actions = {
                     IconButton(onClick = { showMessages = true }) {
-                        BadgedBox(badge = { Badge(containerColor = RedUEB) }) {
-                            Icon(
-                                imageVector = Icons.Default.NotificationsNone,
-                                contentDescription = "Notificaciones",
-                                tint = BlueUEB
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.ChatBubbleOutline,
+                            contentDescription = "Mensajes",
+                            tint = BlueUEB
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = BackgroundLight)
             )
         },
         bottomBar = {
@@ -133,7 +133,7 @@ fun StudentHomeScreen(
                         selectedTextColor = RedUEB,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
-                        indicatorColor = ChipBackground
+                        indicatorColor = RedUEB.copy(alpha = 0.08f)
                     )
                 )
                 NavigationBarItem(
@@ -146,7 +146,7 @@ fun StudentHomeScreen(
                         selectedTextColor = RedUEB,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
-                        indicatorColor = ChipBackground
+                        indicatorColor = RedUEB.copy(alpha = 0.08f)
                     )
                 )
                 NavigationBarItem(
@@ -159,7 +159,7 @@ fun StudentHomeScreen(
                         selectedTextColor = RedUEB,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
-                        indicatorColor = ChipBackground
+                        indicatorColor = RedUEB.copy(alpha = 0.08f)
                     )
                 )
                 NavigationBarItem(
@@ -172,7 +172,7 @@ fun StudentHomeScreen(
                         selectedTextColor = RedUEB,
                         unselectedIconColor = TextSecondary,
                         unselectedTextColor = TextSecondary,
-                        indicatorColor = ChipBackground
+                        indicatorColor = RedUEB.copy(alpha = 0.08f)
                     )
                 )
             }
@@ -251,9 +251,17 @@ fun StudentCatalogContent(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .padding(horizontal = 20.dp),
+        contentPadding = PaddingValues(bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        item {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("GUARANDA · VIDA UNIVERSITARIA", fontSize = 10.sp, letterSpacing = 1.5.sp, fontWeight = FontWeight.SemiBold, color = RedUEB)
+                Text("Tu próximo hogar,\nmás cerca.", fontSize = 28.sp, lineHeight = 35.sp, fontWeight = FontWeight.Bold, color = BlueUEB)
+                Text("Un espacio para vivir tu nueva etapa.", fontSize = 13.sp, color = TextSecondary)
+            }
+        }
         // Barra de búsqueda con botón de filtros
         item {
             Spacer(modifier = Modifier.height(4.dp))
@@ -274,7 +282,7 @@ fun StudentCatalogContent(
                         }
                     } else null,
                     singleLine = true,
-                    shape = RoundedCornerShape(24.dp),
+                    shape = RoundedCornerShape(18.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White,
@@ -306,44 +314,25 @@ fun StudentCatalogContent(
             }
         }
 
-        // Categorías (Habitaciones, Departamentos, Casas)
         item {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                showcaseCategories.forEach { category ->
-                    val isSelected = selectedType == category.id
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(12.dp))
-                            .clickable { onSelectType(category.id) }
-                            .padding(horizontal = 8.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(64.dp)
-                                .clip(RoundedCornerShape(18.dp))
-                                // Sin selección todas se ven activas; con selección se atenúan las demás
-                                .background(if (selectedType == null || isSelected) category.color else category.color.copy(alpha = 0.25f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = category.icon,
-                                contentDescription = category.title,
-                                tint = Color.White,
-                                modifier = Modifier.size(28.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = category.title,
-                            fontSize = 12.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isSelected) category.color else TextPrimary
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                items(showcaseCategories, key = { it.id }) { category ->
+                    val selected = selectedType == category.id
+                    FilterChip(
+                        selected = selected,
+                        onClick = { onSelectType(category.id) },
+                        label = { Text(category.title, fontSize = 12.sp) },
+                        leadingIcon = { Icon(category.icon, null, modifier = Modifier.size(18.dp)) },
+                        shape = RoundedCornerShape(14.dp),
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = Color.White,
+                            selectedContainerColor = BlueUEB,
+                            selectedLabelColor = Color.White,
+                            selectedLeadingIconColor = Color.White,
+                            labelColor = TextSecondary,
+                            iconColor = TextSecondary
                         )
-                    }
+                    )
                 }
             }
         }
@@ -382,14 +371,14 @@ fun StudentCatalogContent(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "¡Encuentra tu hogar ideal!",
+                                text = "Cerca de clases.\nCerca de todo.",
                                 color = Color.White,
                                 fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Mira en el mapa las viviendas cerca de la UEB.",
+                                text = "Explora alojamientos en el mapa",
                                 color = Color(0xFFD1D5DB),
                                 fontSize = 12.sp
                             )
@@ -402,7 +391,7 @@ fun StudentCatalogContent(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.ArrowForward,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                                 contentDescription = null,
                                 tint = Color.White,
                                 modifier = Modifier.size(16.dp)
@@ -421,13 +410,13 @@ fun StudentCatalogContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Inmuebles en Guaranda",
+                    text = "Encuentra tu espacio",
                     fontSize = 17.sp,
                     fontWeight = FontWeight.Bold,
                     color = TextPrimary
                 )
                 Text(
-                    text = "$total disponibles",
+                    text = if (total == 1) "1 disponible" else "$total disponibles",
                     fontSize = 13.sp,
                     color = TextSecondary
                 )
