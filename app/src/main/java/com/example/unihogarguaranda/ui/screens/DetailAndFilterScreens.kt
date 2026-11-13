@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.ui.screens
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -187,13 +188,22 @@ fun PropertyDetailScreen(
     onShare: ((Property) -> Unit)? = null
 ) {
     var showPanorama by rememberSaveable(property.id) { mutableStateOf(false) }
+    var showPhoto3D by rememberSaveable(property.id) { mutableStateOf(false) }
     var showReport by rememberSaveable(property.id) { mutableStateOf(false) }
     var motivo by rememberSaveable(property.id) { mutableStateOf("") }
+    val pagerState = rememberPagerState(pageCount = { property.fotoUrls.size })
+    val galleryScroll = rememberScrollState()
+    val selectedPhoto = property.fotoUrls.getOrNull(pagerState.currentPage)
     val panoramaUrl = property.panoramaUrl
+    if (showPhoto3D && selectedPhoto != null) {
+        Photo3DScreen(selectedPhoto, pagerState.currentPage + 1, onBack = { showPhoto3D = false })
+        return
+    }
     if (showPanorama && panoramaUrl != null) {
         PanoramaScreen(panoramaUrl, onBack = { showPanorama = false })
         return
     }
+    BackHandler(onBack = onBack)
     if (showReport && onReport != null) {
         AlertDialog(
             onDismissRequest = { showReport = false },
@@ -258,9 +268,8 @@ fun PropertyDetailScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(galleryScroll)
         ) {
-            val pagerState = rememberPagerState(pageCount = { property.fotoUrls.size })
             // Galería con botón atrás y favorito
             Box(
                 modifier = Modifier
@@ -410,6 +419,11 @@ fun PropertyDetailScreen(
                     }
                 }
 
+                if (selectedPhoto != null) {
+                    OutlinedButton(onClick = { showPhoto3D = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Ver foto en 3D")
+                    }
+                }
                 if (panoramaUrl != null) {
                     OutlinedButton(onClick = { showPanorama = true }, modifier = Modifier.fillMaxWidth()) {
                         Text("Ver recorrido 360°")

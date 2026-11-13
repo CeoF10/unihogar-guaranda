@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.ui.screens
 
+import android.view.ViewGroup.LayoutParams
 import android.webkit.WebView
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
@@ -50,6 +51,7 @@ internal fun PanoramaScreen(url: String, onBack: () -> Unit) {
             AndroidView(
                 factory = {
                     WebView(it).apply {
+                        layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
                         settings.javaScriptEnabled = true
                         settings.allowFileAccess = false
                         settings.allowContentAccess = false
