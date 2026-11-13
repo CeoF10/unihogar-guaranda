@@ -163,7 +163,7 @@ fun FilterBottomSheet(
     }
 }
 
-private const val PRECIO_MIN = 50f
+private const val PRECIO_MIN = 0f
 private const val PRECIO_MAX = 600f
 val TIPOS_VIVIENDA = listOf("Habitación", "Departamento", "Casa")
 private val SERVICIOS = listOf("WiFi", "Agua", "Luz", "Lavadora", "Amoblado", "Parqueadero")
@@ -176,8 +176,45 @@ fun PropertyDetailScreen(
     onBack: () -> Unit,
     onToggleFavorite: (Property) -> Unit,
     onContactOwner: (Property) -> Unit,
-    onMessageOwner: ((Property) -> Unit)? = null
+    onMessageOwner: ((Property) -> Unit)? = null,
+    inComparison: Boolean = false,
+    onCompare: ((Property) -> Unit)? = null,
+    onShowComparison: (() -> Unit)? = null,
+    onVisit: ((Property) -> Unit)? = null,
+    onReport: ((Property, String) -> Unit)? = null,
+    onCopyContact: ((Property) -> Unit)? = null,
+    onNavigate: ((Property) -> Unit)? = null,
+    onShare: ((Property) -> Unit)? = null
 ) {
+    var showPanorama by rememberSaveable(property.id) { mutableStateOf(false) }
+    var showReport by rememberSaveable(property.id) { mutableStateOf(false) }
+    var motivo by rememberSaveable(property.id) { mutableStateOf("") }
+    val panoramaUrl = property.panoramaUrl
+    if (showPanorama && panoramaUrl != null) {
+        PanoramaScreen(panoramaUrl, onBack = { showPanorama = false })
+        return
+    }
+    if (showReport && onReport != null) {
+        AlertDialog(
+            onDismissRequest = { showReport = false },
+            title = { Text("Reportar anuncio") },
+            text = {
+                OutlinedTextField(
+                    value = motivo,
+                    onValueChange = { motivo = it.take(500) },
+                    label = { Text("Motivo del reporte") },
+                    supportingText = { Text("${motivo.length}/500") }
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onReport(property, motivo.trim())
+                    showReport = false
+                }, enabled = motivo.trim().length >= 5) { Text("Enviar reporte") }
+            },
+            dismissButton = { TextButton(onClick = { showReport = false }) { Text("Cancelar") } }
+        )
+    }
     Scaffold(
         containerColor = BackgroundLight,
         bottomBar = {
@@ -223,6 +260,7 @@ fun PropertyDetailScreen(
                 .padding(paddingValues)
                 .verticalScroll(rememberScrollState())
         ) {
+            val pagerState = rememberPagerState(pageCount = { property.fotoUrls.size })
             // Galería con botón atrás y favorito
             Box(
                 modifier = Modifier
@@ -242,7 +280,6 @@ fun PropertyDetailScreen(
                         Text("Sin fotos todavía", color = BlueUEB, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                     }
                 } else {
-                    val pagerState = rememberPagerState(pageCount = { property.fotoUrls.size })
                     HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { pagina ->
                         AsyncImage(
                             model = property.fotoUrls[pagina],
@@ -297,9 +334,9 @@ fun PropertyDetailScreen(
                     repeat(if (property.fotoUrls.isEmpty()) 1 else property.fotoUrls.size) { index ->
                         Box(
                             modifier = Modifier
-                                .size(if (index == 0) 8.dp else 6.dp)
+                                .size(if (index == pagerState.currentPage) 8.dp else 6.dp)
                                 .clip(CircleShape)
-                                .background(if (index == 0) RedUEB else Color.White.copy(alpha = 0.7f))
+                                .background(if (index == pagerState.currentPage) RedUEB else Color.White.copy(alpha = 0.7f))
                         )
                     }
                 }
@@ -322,7 +359,7 @@ fun PropertyDetailScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     Row(verticalAlignment = Alignment.Bottom) {
                         Text(
-                            text = "$${property.price.toInt()}",
+                            text = moneda(property.price),
                             fontSize = 26.sp,
                             fontWeight = FontWeight.Black,
                             color = BlueUEB
@@ -338,17 +375,17 @@ fun PropertyDetailScreen(
                     // RF08: arriendo, cargos recurrentes y depósito por separado
                     property.costos?.let { costos ->
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Arriendo: $${costos.arriendo.toInt()}", fontSize = 13.sp, color = TextPrimary)
+                            Text("Arriendo: ${moneda(costos.arriendo)}", fontSize = 13.sp, color = TextPrimary)
                             costos.cargosRecurrentes.orEmpty().forEach { cargo ->
                                 Text(
-                                    "${cargo.nombre}: " + (cargo.monto?.let { "$${it.toInt()}" } ?: "por confirmar"),
+                                    "${cargo.nombre}: " + (cargo.monto?.let(::moneda) ?: "por confirmar"),
                                     fontSize = 13.sp,
                                     color = if (cargo.monto == null) RedUEB else TextPrimary
                                 )
                             }
-                            Text("Depósito (se paga una vez): $${costos.deposito.toInt()}", fontSize = 13.sp, color = TextSecondary)
+                            Text("Depósito (se paga una vez): ${moneda(costos.deposito)}", fontSize = 13.sp, color = TextSecondary)
                             Text(
-                                text = costos.totalMensual?.let { "Total mensual: $${it.toInt()}" }
+                                text = costos.totalMensual?.let { "Total mensual: ${moneda(it)}" }
                                     ?: (costos.mensaje ?: "Total pendiente"),
                                 fontSize = 14.sp,
                                 fontWeight = FontWeight.Bold,
@@ -371,6 +408,42 @@ fun PropertyDetailScreen(
                             color = TextSecondary
                         )
                     }
+                }
+
+                if (panoramaUrl != null) {
+                    OutlinedButton(onClick = { showPanorama = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Ver recorrido 360°")
+                    }
+                }
+
+                if (property.demostracion) {
+                    Text("Anuncio ficticio · imágenes generadas", style = MaterialTheme.typography.labelLarge)
+                }
+                property.propietario?.let { Text("Propietario: $it") }
+                if (property.estado == "DISPONIBLE") Text("Disponible", style = MaterialTheme.typography.labelLarge)
+                fechaEcuador(property.actualizado)?.let {
+                    Text("Actualizado el $it", style = MaterialTheme.typography.bodySmall)
+                }
+                property.reglas?.takeIf { it.isNotBlank() }?.let { Text("Reglas de la vivienda: $it") }
+
+                if (onCompare != null) {
+                    OutlinedButton(onClick = { onCompare(property) }, modifier = Modifier.fillMaxWidth()) {
+                        Text(if (inComparison) "Quitar del comparador" else "Agregar al comparador")
+                    }
+                }
+                onShowComparison?.let { TextButton(onClick = it) { Text("Abrir comparador") } }
+                if (onVisit != null) {
+                    Button(onClick = { onVisit(property) }, modifier = Modifier.fillMaxWidth()) { Text("Solicitar visita") }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onCopyContact != null && !property.contact.isNullOrBlank()) {
+                        TextButton(onClick = { onCopyContact(property) }) { Text("Copiar contacto") }
+                    }
+                    if (onNavigate != null) TextButton(onClick = { onNavigate(property) }) { Text("Cómo llegar") }
+                }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    if (onShare != null) TextButton(onClick = { onShare(property) }) { Text("Compartir") }
+                    if (onReport != null) TextButton(onClick = { showReport = true }) { Text("Reportar anuncio") }
                 }
 
                 // Chips de especificaciones

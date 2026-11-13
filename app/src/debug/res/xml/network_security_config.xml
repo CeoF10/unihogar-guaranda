@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    La app se conecta a la API de UniHogar en la PC de desarrollo por cable (127.0.0.1),
+    por Wi-Fi (IP de la PC, http) o por un túnel/servidor HTTPS. Como la IP de la PC cambia
+    según la red, se permite http; con un servidor HTTPS el tráfico va cifrado.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

@@ -35,17 +35,26 @@ import org.osmdroid.views.overlay.Marker
 
 // Centro de Guaranda (Plaza Roja) y campus de la UEB (Alpachaca)
 private val GUARANDA_CENTER = GeoPoint(-1.5921, -79.0035)
-private val UEB_CAMPUS = GeoPoint(-1.591234, -79.004567)
+private val CAMPUS_UEB = listOf(
+    "Campus Matriz Alpachaca" to GeoPoint(-1.591234, -79.004567),
+    "Campus Laguacoto" to GeoPoint(-1.602345, -78.995432)
+)
 
 @Composable
 fun InteractiveMapScreen(
     properties: List<Property>,
     onFilterClick: () -> Unit,
     onPropertySelect: (Property) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    total: Int = properties.size,
+    loadingMore: Boolean = false,
+    onLoadMore: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var selectedProperty by remember { mutableStateOf(properties.firstOrNull()) }
+    LaunchedEffect(properties) {
+        selectedProperty = properties.firstOrNull { it.id == selectedProperty?.id } ?: properties.firstOrNull()
+    }
 
     // Un solo MapView por pantalla; osmdroid necesita enterarse de onResume/onPause
     val mapView = remember {
@@ -90,13 +99,14 @@ fun InteractiveMapScreen(
             update = { mapView ->
                 mapView.overlays.clear()
 
-                // Marcador del campus UEB
-                mapView.overlays.add(Marker(mapView).apply {
-                    position = UEB_CAMPUS
-                    title = "Universidad Estatal de Bolívar (Campus Matriz)"
-                    setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                    icon = ContextCompat.getDrawable(context, R.drawable.ic_map_campus)
-                })
+                for ((nombre, punto) in CAMPUS_UEB) {
+                    mapView.overlays.add(Marker(mapView).apply {
+                        position = punto
+                        title = nombre
+                        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+                        icon = ContextCompat.getDrawable(context, R.drawable.ic_map_campus)
+                    })
+                }
 
                 // Un marcador por cada inmueble; el seleccionado va resaltado
                 properties.forEach { prop ->
@@ -141,7 +151,7 @@ fun InteractiveMapScreen(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    "Universidad Estatal de Bolívar (Campus Matriz)",
+                    "Campus de la Universidad Estatal de Bolívar",
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp,
                     color = BlueUEB
@@ -178,6 +188,17 @@ fun InteractiveMapScreen(
                     .background(Color.White)
             ) {
                 Icon(Icons.Default.FilterList, contentDescription = "Filtros", tint = BlueUEB)
+            }
+        }
+
+        if (properties.size < total) {
+            OutlinedButton(
+                onClick = onLoadMore,
+                enabled = !loadingMore,
+                modifier = Modifier.align(Alignment.TopCenter).padding(top = 112.dp),
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = Color.White)
+            ) {
+                Text(if (loadingMore) "Cargando…" else "Mostrar más viviendas (${properties.size}/$total)")
             }
         }
 

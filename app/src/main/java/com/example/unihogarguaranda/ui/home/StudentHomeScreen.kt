@@ -1,5 +1,10 @@
 package com.example.unihogarguaranda.ui.home
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -18,6 +23,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 import com.example.unihogarguaranda.ui.screens.ChatScreen
+import com.example.unihogarguaranda.ui.screens.ComparisonScreen
+import com.example.unihogarguaranda.ui.screens.VisitsScreen
+import com.example.unihogarguaranda.ui.screens.moneda
+import com.example.unihogarguaranda.ui.screens.rememberListingAction
+import com.example.unihogarguaranda.ui.screens.rememberVisitPicker
+import com.example.unihogarguaranda.data.NuevaVisitaRequest
+import com.example.unihogarguaranda.data.ReporteRequest
+import com.example.unihogarguaranda.data.toProperty
 import com.example.unihogarguaranda.data.Session
 import com.example.unihogarguaranda.data.ApiClient
 import androidx.compose.ui.Alignment
@@ -63,6 +76,10 @@ fun StudentHomeScreen(
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
     // Al girar se pierde el objeto, pero se guarda el id para volver a abrir el mismo detalle
     var detailId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var showVisits by rememberSaveable { mutableStateOf(false) }
+    var showComparison by rememberSaveable { mutableStateOf(false) }
+    var comparisonIds by rememberSaveable { mutableStateOf(longArrayOf()) }
+    val comparison = remember { mutableStateMapOf<Long, Property>() }
     var showMessages by rememberSaveable { mutableStateOf(false) }
     var chatId by rememberSaveable { mutableStateOf<Long?>(null) }
     var chatTitulo by rememberSaveable { mutableStateOf("") }
@@ -87,6 +104,32 @@ fun StudentHomeScreen(
     // Todo el estado del catálogo vive en el ViewModel; la pantalla solo lo dibuja
     val vm: CatalogViewModel = viewModel()
     val ui by vm.ui.collectAsState()
+    val elegirFecha = rememberVisitPicker()
+    val enviarAccion = rememberListingAction()
+
+    LaunchedEffect(comparisonIds) {
+        for (id in comparisonIds) {
+            if (comparison[id] == null) {
+                comparison[id] = (ui.propiedades + ui.favoritas).firstOrNull { it.id == id }
+                    ?: try {
+                        ApiClient.service.getInmueble(id).body()?.toProperty()
+                    } catch (_: java.io.IOException) {
+                        null
+                    } ?: continue
+            }
+        }
+    }
+    fun alternarComparacion(prop: Property) {
+        if (prop.id in comparisonIds) {
+            comparisonIds = comparisonIds.filterNot { it == prop.id }.toLongArray()
+            comparison.remove(prop.id)
+        } else if (comparisonIds.size < 3) {
+            comparison[prop.id] = prop
+            comparisonIds += prop.id
+        } else {
+            Toast.makeText(context, "Puedes comparar hasta tres viviendas", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     ui.error?.let { mensaje ->
         LaunchedEffect(mensaje) {
@@ -100,7 +143,13 @@ fun StudentHomeScreen(
     }
     LaunchedEffect(detailId, ui.propiedades, ui.favoritas) {
         if (selectedPropertyDetail == null && detailId != null) {
-            selectedPropertyDetail = (ui.propiedades + ui.favoritas).firstOrNull { it.id == detailId }
+            val id = detailId ?: return@LaunchedEffect
+            selectedPropertyDetail = (ui.propiedades + ui.favoritas).firstOrNull { it.id == id }
+                ?: try {
+                    ApiClient.service.getInmueble(id).body()?.toProperty()
+                } catch (_: java.io.IOException) {
+                    null
+                }
         }
     }
 
@@ -117,6 +166,19 @@ fun StudentHomeScreen(
         return
     }
 
+    if (showVisits) {
+        VisitsScreen(propietario = false, onBack = { showVisits = false })
+        return
+    }
+    if (showComparison) {
+        ComparisonScreen(
+            propiedades = comparisonIds.map { comparison[it] }.filterNotNull(),
+            onRemove = ::alternarComparacion,
+            onBack = { showComparison = false }
+        )
+        return
+    }
+
     // Si está viendo el detalle de una vivienda
     if (selectedPropertyDetail != null) {
         PropertyDetailScreen(
@@ -127,7 +189,43 @@ fun StudentHomeScreen(
                 selectedPropertyDetail = selectedPropertyDetail?.copy(isFavorite = !prop.isFavorite)
             },
             onContactOwner = { prop -> contactarPropietario(context, prop) },
-            onMessageOwner = abrirChat
+            onMessageOwner = abrirChat,
+            inComparison = selectedPropertyDetail!!.id in comparisonIds,
+            onCompare = ::alternarComparacion,
+            onShowComparison = if (comparisonIds.isNotEmpty()) ({ showComparison = true }) else null,
+            onVisit = { prop ->
+                elegirFecha { fecha ->
+                    enviarAccion { auth -> ApiClient.service.solicitarVisita(auth, prop.id, NuevaVisitaRequest(fecha)) }
+                }
+            },
+            onReport = { prop, motivo ->
+                enviarAccion { auth -> ApiClient.service.reportar(auth, prop.id, ReporteRequest(motivo)) }
+            },
+            onCopyContact = { prop ->
+                prop.contact?.let { numero ->
+                    context.getSystemService(ClipboardManager::class.java)
+                        .setPrimaryClip(ClipData.newPlainText("Contacto del anuncio", numero))
+                    Toast.makeText(context, "Contacto copiado", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onNavigate = { prop ->
+                val destino = Uri.encode("${prop.lat},${prop.lng}")
+                val ruta = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$destino")
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, ruta))
+                } catch (_: android.content.ActivityNotFoundException) {
+                    Toast.makeText(context, "No hay una app para abrir la ruta", Toast.LENGTH_SHORT).show()
+                }
+            },
+            onShare = { prop ->
+                val texto = listOfNotNull(
+                    "${prop.title} · UniHogar Guaranda #${prop.id}",
+                    "${moneda(prop.price)} / mes",
+                    prop.contact?.let { "Contacto: $it" }
+                ).joinToString("\n")
+                val intent = Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, texto)
+                context.startActivity(Intent.createChooser(intent, "Compartir vivienda"))
+            }
         )
         return
     }
@@ -155,6 +253,9 @@ fun StudentHomeScreen(
                     }
                 },
                 actions = {
+                    if (comparisonIds.isNotEmpty()) {
+                        TextButton(onClick = { showComparison = true }) { Text("Comparar (${comparisonIds.size})") }
+                    }
                     IconButton(onClick = { showMessages = true }) {
                         Icon(
                             imageVector = Icons.Default.ChatBubbleOutline,
@@ -247,7 +348,10 @@ fun StudentHomeScreen(
                 properties = ui.propiedades,
                 onFilterClick = { showFilterSheet = true },
                 onPropertySelect = { selectedPropertyDetail = it },
-                modifier = Modifier.padding(paddingValues)
+                modifier = Modifier.padding(paddingValues),
+                total = ui.total,
+                loadingMore = ui.cargandoMas,
+                onLoadMore = vm::cargarMas
             )
             2 -> FavoritesTabContent(
                 paddingValues = paddingValues,
@@ -263,6 +367,7 @@ fun StudentHomeScreen(
                 onOptionClick = { option ->
                     when (option) {
                         "Mensajes" -> showMessages = true
+                        "Visitas" -> showVisits = true
                         "Mis favoritos" -> selectedTab = 2
                         else -> Toast.makeText(context, "$option (próximamente)", Toast.LENGTH_SHORT).show()
                     }

@@ -30,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.ui.text.style.TextOverflow
 import com.example.unihogarguaranda.ui.screens.FullProfileScreen
 import com.example.unihogarguaranda.ui.screens.MessagesScreen
+import com.example.unihogarguaranda.ui.screens.VisitsScreen
 import com.example.unihogarguaranda.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,6 +44,7 @@ fun OwnerHomeScreen(
     var showRegisterWizard by rememberSaveable { mutableStateOf(false) }
     var showMisPublicaciones by rememberSaveable { mutableStateOf(false) }
     var showMiExpediente by rememberSaveable { mutableStateOf(false) }
+    var showVisits by rememberSaveable { mutableStateOf(false) }
     var showMessages by rememberSaveable { mutableStateOf(false) }
     var chatId by rememberSaveable { mutableStateOf<Long?>(null) }
     var chatTitulo by rememberSaveable { mutableStateOf("") }
@@ -57,6 +59,10 @@ fun OwnerHomeScreen(
     }
 
     when {
+        showVisits -> {
+            VisitsScreen(propietario = true, onBack = { showVisits = false })
+            return
+        }
         showRegisterWizard -> {
             com.example.unihogarguaranda.ui.screens.RegisterPropertyWizardScreen(
                 onDismiss = { showRegisterWizard = false },
@@ -146,6 +152,7 @@ fun OwnerHomeScreen(
                         "Mis publicaciones" -> showMisPublicaciones = true
                         "Mi expediente" -> showMiExpediente = true
                         "Mensajes" -> showMessages = true
+                        "Visitas" -> showVisits = true
                     }
                 }
             )

@@ -18,8 +18,14 @@ fun InmuebleResponse.toProperty(isFavorite: Boolean = false) = Property(
     isFavorite = isFavorite,
     lat = lat,
     lng = lng,
-    fotoUrls = fotos?.map { ApiClient.urlArchivo(it.url) } ?: emptyList(),
+    fotoUrls = fotos?.filter { it.tipo != "PANORAMA" }?.map { ApiClient.urlArchivo(it.url) } ?: emptyList(),
     contact = contacto,
-    photoCount = fotos?.size ?: 0,
-    costos = costos
+    photoCount = fotos?.count { it.tipo != "PANORAMA" } ?: 0,
+    costos = costos,
+    panoramaUrl = fotos?.firstOrNull { it.tipo == "PANORAMA" }?.let { ApiClient.urlArchivo(it.url) },
+    propietario = propietario,
+    actualizado = actualizado,
+    estado = estado,
+    reglas = reglas,
+    demostracion = demostracion
 )

@@ -19,7 +19,13 @@ data class Property(
     val photoCount: Int = 3,
     val fotoUrls: List<String> = emptyList(),
     val contact: String? = null,
-    val costos: com.example.unihogarguaranda.data.CostosResponse? = null
+    val costos: com.example.unihogarguaranda.data.CostosResponse? = null,
+    val panoramaUrl: String? = null,
+    val propietario: String? = null,
+    val actualizado: String? = null,
+    val estado: String? = null,
+    val reglas: String? = null,
+    val demostracion: Boolean = false
 )
 
 object MockData {

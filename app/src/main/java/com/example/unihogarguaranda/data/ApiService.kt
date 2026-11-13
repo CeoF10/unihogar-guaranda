@@ -29,6 +29,9 @@ interface ApiService {
     @POST("auth/recuperar")
     suspend fun recuperarClave(@Body body: EmailRequest): Response<MensajeResponse>
 
+    @POST("auth/perfiles")
+    suspend fun habilitarPerfil(@Header("Authorization") auth: String, @Body body: PerfilRequest): Response<MensajeResponse>
+
     // Mensajes entre estudiante y propietario
     @GET("conversaciones")
     suspend fun getConversaciones(@Header("Authorization") auth: String): Response<List<ConversacionResponse>>
@@ -97,7 +100,8 @@ interface ApiService {
     suspend fun subirFotos(
         @Header("Authorization") auth: String,
         @Path("id") id: Long,
-        @Part fotos: List<MultipartBody.Part>
+        @Part fotos: List<MultipartBody.Part>,
+        @Query("tipo") tipo: String? = null
     ): Response<FotosResponse>
 
     @DELETE("fotos/{fotoId}")
@@ -112,6 +116,33 @@ interface ApiService {
     suspend fun enviarExpediente(
         @Header("Authorization") auth: String,
         @Part partes: List<MultipartBody.Part>
+    ): Response<MensajeResponse>
+
+    @GET("visitas")
+    suspend fun visitas(
+        @Header("Authorization") auth: String,
+        @Query("rol") rol: String
+    ): Response<List<VisitaResponse>>
+
+    @POST("inmuebles/{id}/visitas")
+    suspend fun solicitarVisita(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Long,
+        @Body body: NuevaVisitaRequest
+    ): Response<MensajeResponse>
+
+    @PATCH("visitas/{id}")
+    suspend fun decidirVisita(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Long,
+        @Body body: DecisionVisitaRequest
+    ): Response<MensajeResponse>
+
+    @POST("inmuebles/{id}/reportes")
+    suspend fun reportar(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Long,
+        @Body body: ReporteRequest
     ): Response<MensajeResponse>
 
     // RF09: favoritos

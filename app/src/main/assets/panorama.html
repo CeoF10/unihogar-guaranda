@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Recorrido 360°</title>
+<style>
+  html,body { margin:0; width:100%; height:100%; background:#131b22; color:#fff; font:16px system-ui,sans-serif }
+  canvas { display:block; width:100%; height:100%; touch-action:none }
+  #status { position:absolute; inset:0; display:grid; place-items:center; padding:24px; text-align:center; pointer-events:none }
+  #status[hidden], #controls[hidden] { display:none }
+  #controls { position:absolute; bottom:16px; right:16px; display:flex; gap:8px }
+  button { color:white; background:#142637dd; border:1px solid #ffffff70; border-radius:8px; min-width:48px; min-height:48px; font:inherit }
+</style>
+<canvas aria-label="Panorama de la vivienda. Arrastra o usa las flechas para mirar alrededor." tabindex="0"></canvas>
+<div id="status" role="status">Cargando panorama…</div>
+<div id="controls" hidden>
+  <button id="minus" aria-label="Alejar">−</button>
+  <button id="plus" aria-label="Acercar">+</button>
+  <button id="reset">Centrar</button>
+</div>
+<script>
+const canvas = document.querySelector('canvas');
+const status = document.getElementById('status');
+const controls = document.getElementById('controls');
+const gl = canvas.getContext('webgl', { alpha: false, antialias: false });
+const initialFov = 72;
+let yaw = 0, pitch = 0, fov = initialFov, ready = false, frame = 0;
+let uniform;
+function fail(message) {
+  ready = false;
+  controls.hidden = true;
+  status.hidden = false;
+  status.textContent = message;
+}
+function shader(type, source) {
+  const stage = gl.createShader(type);
+  gl.shaderSource(stage, source);
+  gl.compileShader(stage);
+  if (!gl.getShaderParameter(stage, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(stage));
+  return stage;
+}
+function initialize() {
+  if (!gl) throw new Error('WebGL no disponible');
+  const program = gl.createProgram();
+  gl.attachShader(program, shader(gl.VERTEX_SHADER, `
+    attribute vec2 position;
+    varying vec2 screen;
+    void main() { screen = position; gl_Position = vec4(position, 0., 1.); }
+  `));
+  gl.attachShader(program, shader(gl.FRAGMENT_SHADER, `
+    precision highp float;
+    varying vec2 screen;
+    uniform sampler2D panorama;
+    uniform vec4 camera;
+    const float PI = 3.14159265359;
+    void main() {
+      vec3 d = normalize(vec3(screen.x * camera.z, screen.y * camera.w, 1.));
+      float cp = cos(camera.y), sp = sin(camera.y);
+      d = vec3(d.x, d.y * cp + d.z * sp, d.z * cp - d.y * sp);
+      float longitude = atan(d.x, d.z) + camera.x;
+      float latitude = asin(clamp(d.y, -1., 1.));
+      gl_FragColor = texture2D(panorama, vec2(fract(.5 + longitude / (2. * PI)), .5 - latitude / PI));
+    }
+  `));
+  gl.linkProgram(program);
+  if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(program));
+  gl.useProgram(program);
+  const buffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+  const position = gl.getAttribLocation(program, 'position');
+  gl.enableVertexAttribArray(position);
+  gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
+  uniform = gl.getUniformLocation(program, 'camera');
+  const texture = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+}
+function draw() {
+  frame = 0;
+  if (!ready) return;
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  const width = Math.max(1, Math.round(canvas.clientWidth * ratio));
+  const height = Math.max(1, Math.round(canvas.clientHeight * ratio));
+  if (width !== canvas.width || height !== canvas.height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const half = Math.tan(fov * Math.PI / 360);
+  const aspect = width / height;
+  gl.viewport(0, 0, width, height);
+  gl.uniform4f(uniform, yaw, pitch, half * Math.min(1, aspect), half / Math.max(1, aspect));
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+}
+function redraw() {
+  if (!frame) frame = requestAnimationFrame(draw);
+}
+function turn(dx, dy) {
+  yaw = (yaw + dx) % (2 * Math.PI);
+  pitch = Math.max(-1.55, Math.min(1.55, pitch + dy));
+  redraw();
+}
+function zoom(delta) {
+  fov = Math.max(35, Math.min(100, fov + delta));
+  redraw();
+}
+let drag;
+canvas.addEventListener('pointerdown', e => {
+  if (drag) return;
+  drag = {id:e.pointerId, x:e.clientX, y:e.clientY};
+  canvas.setPointerCapture(e.pointerId);
+});
+canvas.addEventListener('pointermove', e => {
+  if (!drag || e.pointerId !== drag.id) return;
+  const scale = fov * Math.PI / (180 * Math.min(canvas.clientWidth, canvas.clientHeight));
+  turn((drag.x - e.clientX) * scale, (e.clientY - drag.y) * scale);
+  drag.x = e.clientX;
+  drag.y = e.clientY;
+});
+for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) {
+  canvas.addEventListener(type, e => { if (drag?.id === e.pointerId) drag = undefined; });
+}
+canvas.addEventListener('keydown', e => {
+  const step = .12;
+  const movement = {ArrowLeft:[-step,0], ArrowRight:[step,0], ArrowUp:[0,step], ArrowDown:[0,-step]}[e.key];
+  if (movement) { e.preventDefault(); turn(...movement); }
+});
+canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); fail('El visor se interrumpió. Vuelve a abrir el panorama.'); });
+window.addEventListener('resize', redraw);
+document.getElementById('minus').onclick = () => zoom(8);
+document.getElementById('plus').onclick = () => zoom(-8);
+document.getElementById('reset').onclick = () => { yaw = pitch = 0; fov = initialFov; redraw(); };
+
+try {
+  initialize();
+  const image = new Image();
+  image.onload = () => {
+    if (image.naturalWidth !== image.naturalHeight * 2) {
+      fail('La imagen no tiene formato panorámico 2:1.');
+      return;
+    }
+    const max = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    let textureSource = image;
+    if (image.naturalWidth > max) {
+      textureSource = document.createElement('canvas');
+      textureSource.width = max;
+      textureSource.height = max / 2;
+      textureSource.getContext('2d').drawImage(image, 0, 0, max, max / 2);
+    }
+    try {
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, textureSource);
+      if (gl.getError() !== gl.NO_ERROR) throw new Error('No se cargó la textura');
+      ready = true;
+      status.hidden = true;
+      controls.hidden = false;
+      redraw();
+    } catch {
+      fail('No se pudo mostrar el panorama. Puedes volver a la galería.');
+    }
+  };
+  image.onerror = () => fail('No se pudo cargar el panorama. Puedes volver a la galería.');
+  image.src = __PANORAMA_URL__;
+} catch {
+  fail('Este dispositivo no pudo iniciar el visor. Puedes volver a la galería.');
+}
+</script>
+</html>

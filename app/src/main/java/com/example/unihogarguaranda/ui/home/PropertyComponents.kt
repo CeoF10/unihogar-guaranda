@@ -223,7 +223,7 @@ fun contactarPropietario(context: Context, property: Property) {
     }
     // Números de Ecuador: 09XXXXXXXX -> 5939XXXXXXXX
     val internacional = if (telefono.startsWith("0")) "593" + telefono.drop(1) else telefono
-    val mensaje = Uri.encode("Hola, vi su anuncio \"${property.title}\" en UniHogar Guaranda. ¿Sigue disponible?")
+    val mensaje = Uri.encode("Hola, vi su anuncio \"${property.title}\" en UniHogar Guaranda (#${property.id}). ¿Sigue disponible?")
     val whatsapp = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$internacional?text=$mensaje"))
     try {
         context.startActivity(whatsapp)

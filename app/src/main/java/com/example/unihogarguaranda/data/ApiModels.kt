@@ -29,7 +29,11 @@ data class InmuebleResponse(
     val distanciaCampusKm: Double? = null,
     val contacto: String? = null,
     val costos: CostosResponse? = null,
-    val fotos: List<FotoResponse>? = null
+    val fotos: List<FotoResponse>? = null,
+    val propietario: String? = null,
+    val actualizado: String? = null,
+    val reglas: String? = null,
+    val demostracion: Boolean = false
 )
 
 data class NuevoInmuebleRequest(
@@ -46,7 +50,10 @@ data class NuevoInmuebleRequest(
     val precisionGpsM: Double?,
     val origen: String = "GPS",
     val cargos: List<CargoResponse> = emptyList(),
-    val contacto: String? = null
+    val contacto: String? = null,
+    val reglas: String? = null,
+    val campusId: Int? = null,
+    val claveCreacion: String? = null
 )
 
 data class NuevoInmuebleResponse(val id: Long, val estado: String)
@@ -63,6 +70,7 @@ data class RegisterRequest(
 )
 
 data class EmailRequest(val email: String)
+data class PerfilRequest(val email: String, val rol: String, val cedula: String? = null)
 
 data class PasswordRequest(val password: String)
 
@@ -76,7 +84,7 @@ data class CostosResponse(
     val mensaje: String?
 )
 
-data class FotoResponse(val id: Long, val orden: Int, val url: String)
+data class FotoResponse(val id: Long, val orden: Int, val url: String, val tipo: String? = null)
 
 data class InmueblesPage(
     val items: List<InmuebleResponse>,
@@ -94,7 +102,13 @@ data class EditarInmuebleRequest(
     val deposito: Double? = null,
     val estado: String? = null,
     val descripcion: String? = null,
-    val contacto: String? = null
+    val contacto: String? = null,
+    val titulo: String? = null,
+    val direccion: String? = null,
+    val tipo: String? = null,
+    val reglas: String? = null,
+    val dormitorios: Int? = null,
+    val servicios: List<String>? = null
 )
 
 // Filtros del catálogo (RF06). Un campo null no se envía.
@@ -140,3 +154,17 @@ data class MensajesResponse(val conversacion: ConversacionInfo, val mensajes: Li
 data class IdResponse(val id: Long)
 
 data class TextoRequest(val texto: String)
+
+data class VisitaResponse(
+    val id: Long,
+    val inmuebleId: Long,
+    val titulo: String,
+    val conQuien: String,
+    val fechaPropuesta: String,
+    val estado: String,
+    val version: Int
+)
+
+data class NuevaVisitaRequest(val fechaPropuesta: String)
+data class DecisionVisitaRequest(val accion: String, val version: Int, val fechaPropuesta: String? = null)
+data class ReporteRequest(val motivo: String)

@@ -87,6 +87,8 @@ fun RegisterPropertyWizardScreen(
 
     // Paso 3
     var precio by rememberSaveable { mutableStateOf("") }
+    var reglas by rememberSaveable { mutableStateOf("") }
+    var campusId by rememberSaveable { mutableIntStateOf(1) }
     var deposito by rememberSaveable { mutableStateOf("") }
     val servicios = remember { mutableStateListOf<String>() }
     val cargos = remember { mutableStateListOf<CargoForm>() }
@@ -97,6 +99,7 @@ fun RegisterPropertyWizardScreen(
     var declarado by rememberSaveable { mutableStateOf(false) }
     var enviando by remember { mutableStateOf(false) }
     var progreso by remember { mutableStateOf("") }
+    val claveCreacion = rememberSaveable { java.util.UUID.randomUUID().toString() }
     var idCreado by rememberSaveable { mutableStateOf<Long?>(null) }
     var fotosSubidas by rememberSaveable { mutableStateOf(false) }
 
@@ -136,7 +139,8 @@ fun RegisterPropertyWizardScreen(
             else -> null
         }
         3 -> when {
-            (precio.toDoubleOrNull() ?: 0.0) <= 0 -> "Escriba el arriendo mensual"
+            precio.toDoubleOrNull()?.let { !it.isFinite() || it < 0 } != false -> "Escriba el arriendo mensual"
+            contacto.length != 10 -> "Escriba un celular de contacto de 10 dígitos"
             cargos.any { it.nombre.isBlank() } -> "Cada cargo necesita un nombre"
             cargos.any { !it.porConfirmar && it.monto.toDoubleOrNull() == null } -> "Ponga el monto del cargo o márquelo como por confirmar"
             else -> null
@@ -158,7 +162,10 @@ fun RegisterPropertyWizardScreen(
         precisionGpsM = if (manual) null else precision?.toDouble(),
         origen = if (manual) "MANUAL" else "GPS",
         cargos = cargos.map { CargoResponse(it.nombre.trim(), if (it.porConfirmar) null else it.monto.toDoubleOrNull()) },
-        contacto = contacto.trim().ifEmpty { null }
+        contacto = contacto.trim().ifEmpty { null },
+        reglas = reglas.trim().ifEmpty { null },
+        campusId = campusId,
+        claveCreacion = claveCreacion
     )
 
     // Crea el inmueble (una sola vez), sube las fotos y lo envía a auditoría
@@ -362,6 +369,11 @@ fun RegisterPropertyWizardScreen(
 
                 // ---------------- PASO 3: PRECIO Y SERVICIOS ----------------
                 3 -> {
+                    Text("Campus de referencia", fontWeight = FontWeight.SemiBold)
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FilterChip(selected = campusId == 1, onClick = { campusId = 1 }, label = { Text("Alpachaca") })
+                        FilterChip(selected = campusId == 2, onClick = { campusId = 2 }, label = { Text("Laguacoto") })
+                    }
                     Encabezado("Precio y servicios", "El estudiante verá el arriendo, los cargos y el depósito por separado.")
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         Campo(precio, { precio = soloNumero(it) }, "Arriendo / mes", "150", Modifier.weight(1f), teclado = KeyboardType.Decimal, prefijo = "$")
@@ -412,6 +424,7 @@ fun RegisterPropertyWizardScreen(
 
                     Campo(contacto, { contacto = it.filter { ch -> ch.isDigit() }.take(10) }, "Celular de contacto (WhatsApp)", "09XXXXXXXX",
                         teclado = KeyboardType.Phone, icono = Icons.Default.Phone)
+                    Campo(reglas, { reglas = it.take(1500) }, "Reglas de la vivienda (opcional)", "Ej. Horario de visitas")
                     ResumenCostos(precio, deposito, cargos)
                 }
 
@@ -471,7 +484,7 @@ fun RegisterPropertyWizardScreen(
                     Row(verticalAlignment = Alignment.Top) {
                         Checkbox(checked = declarado, onCheckedChange = { declarado = it })
                         Text(
-                            "Declaro que soy el propietario o tengo autorización para arrendar este inmueble y que los datos son verdaderos.",
+                            "Declaro que tengo autorización para arrendar el inmueble y doy mi consentimiento para publicar su ubicación.",
                             fontSize = 13.sp,
                             color = TextPrimary,
                             modifier = Modifier.padding(top = 12.dp)

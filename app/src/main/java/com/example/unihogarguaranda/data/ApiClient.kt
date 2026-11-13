@@ -24,6 +24,12 @@ object ApiClient {
     // El servidor puede tardar en responder (equipo dormido, red lenta): se espera hasta 75 s
     private val http by lazy {
         OkHttpClient.Builder()
+            .addInterceptor { cadena ->
+                if (!BuildConfig.DEBUG && !cadena.request().url.isHttps) {
+                    throw java.io.IOException("La versión de producción requiere HTTPS")
+                }
+                cadena.proceed(cadena.request())
+            }
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(75, TimeUnit.SECONDS)
             .writeTimeout(75, TimeUnit.SECONDS)

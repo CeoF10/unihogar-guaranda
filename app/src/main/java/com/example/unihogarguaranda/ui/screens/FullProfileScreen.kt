@@ -16,6 +16,7 @@ import com.example.unihogarguaranda.data.PasswordRequest
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.example.unihogarguaranda.data.ApiClient
 import com.example.unihogarguaranda.data.EmailRequest
+import com.example.unihogarguaranda.data.PerfilRequest
 import kotlinx.coroutines.launch
 import java.io.IOException
 import androidx.compose.ui.Alignment
@@ -33,7 +34,9 @@ val studentOptions = listOf(
     ProfileOption(Icons.Default.Article, "Mis publicaciones"),
     ProfileOption(Icons.Default.Favorite, "Mis favoritos"),
     ProfileOption(Icons.Default.ChatBubbleOutline, "Mensajes"),
+    ProfileOption(Icons.Default.DateRange, "Visitas"),
     ProfileOption(Icons.Default.Settings, "Configuración"),
+    ProfileOption(Icons.Default.PersonAdd, "Activar otro perfil"),
     ProfileOption(Icons.Default.HelpOutline, "Ayuda"),
     ProfileOption(Icons.Default.DeleteOutline, "Eliminar cuenta")
 )
@@ -65,7 +68,49 @@ fun FullProfileScreen(
     var errorEliminar by remember { mutableStateOf<String?>(null) }
     var eliminando by remember { mutableStateOf(false) }
 
+    val enviarAccion = rememberListingAction()
+    var correoPerfil by rememberSaveable { mutableStateOf("") }
+    var cedulaPerfil by rememberSaveable { mutableStateOf("") }
+    val agregarPropietario = roleTitle == "Estudiante"
     when (dialogo) {
+        "Activar otro perfil" -> AlertDialog(
+            onDismissRequest = { dialogo = null },
+            title = { Text(if (agregarPropietario) "Activar perfil propietario" else "Activar perfil estudiante") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Confirma el segundo correo para usar ambos perfiles con tu cuenta.")
+                    OutlinedTextField(
+                        value = correoPerfil,
+                        onValueChange = { correoPerfil = it.take(120) },
+                        label = { Text(if (agregarPropietario) "Correo personal" else "Correo @ueb.edu.ec") },
+                        singleLine = true
+                    )
+                    if (agregarPropietario) {
+                        OutlinedTextField(
+                            value = cedulaPerfil,
+                            onValueChange = { cedulaPerfil = it.filter(Char::isDigit).take(10) },
+                            label = { Text("Cédula") },
+                            singleLine = true
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = correoPerfil.isNotBlank() && (!agregarPropietario || cedulaPerfil.length == 10),
+                    onClick = {
+                        val body = PerfilRequest(
+                            correoPerfil.trim(), if (agregarPropietario) "PROPIETARIO" else "ESTUDIANTE",
+                            cedulaPerfil.takeIf { agregarPropietario }
+                        )
+                        enviarAccion { auth -> ApiClient.service.habilitarPerfil(auth, body) }
+                        cedulaPerfil = ""
+                        dialogo = null
+                    }
+                ) { Text("Enviar confirmación") }
+            },
+            dismissButton = { TextButton(onClick = { dialogo = null }) { Text("Cancelar") } }
+        )
         "Configuración" -> AlertDialog(
             onDismissRequest = { dialogo = null; mensajeClave = null },
             title = { Text("Configuración", fontWeight = FontWeight.Bold, color = BlueUEB) },
@@ -239,14 +284,15 @@ fun FullProfileScreen(
         } else {
             studentOptions.filter { it.title != "Mis publicaciones" }
         }
-        items(opciones) { option ->
+        val otroRol = if (agregarPropietario) "ROLE_PROPIETARIO" else "ROLE_ESTUDIANTE"
+        items(opciones.filter { it.title != "Activar otro perfil" || otroRol !in Session.roles(context) }) { option ->
             Surface(
                 shape = RoundedCornerShape(14.dp),
                 color = Color.White,
                 modifier = Modifier
                     .fillMaxWidth()
                     .clickable {
-                        if (option.title in setOf("Ayuda", "Configuración", "Eliminar cuenta")) dialogo = option.title
+                        if (option.title in setOf("Ayuda", "Configuración", "Eliminar cuenta", "Activar otro perfil")) dialogo = option.title
                         else onOptionClick(option.title)
                     },
                 shadowElevation = 1.dp
