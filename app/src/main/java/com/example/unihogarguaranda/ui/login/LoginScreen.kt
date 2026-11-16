@@ -1,5 +1,9 @@
 package com.example.unihogarguaranda.ui.login
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.unihogarguaranda.BuildConfig
 import com.example.unihogarguaranda.R
 import com.example.unihogarguaranda.ui.components.SelfieCedulaDialog
 import com.example.unihogarguaranda.ui.components.ServidorDialog
@@ -54,6 +60,7 @@ fun LoginScreen(
     onLoginSuccess: (UserRole, String) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val context = LocalContext.current
     var showSelfieDialog by rememberSaveable { mutableStateOf(false) }
     var showServidorDialog by rememberSaveable { mutableStateOf(false) }
     var servidorActual by remember { mutableStateOf(ApiClient.baseUrl) }
@@ -535,6 +542,19 @@ fun LoginScreen(
                     fontSize = 11.sp,
                     color = TextSecondary
                 )
+            }
+
+            // Acceso rápido al panel solo en la versión de desarrollo: estudiantes y propietarios no lo necesitan.
+            if (BuildConfig.DEBUG && !uiState.isRegisterMode) {
+                TextButton(onClick = {
+                    try {
+                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.ADMIN_PANEL_URL)))
+                    } catch (_: ActivityNotFoundException) {
+                        Toast.makeText(context, "No hay un navegador para abrir el panel", Toast.LENGTH_SHORT).show()
+                    }
+                }) {
+                    Text("Panel administrativo", fontSize = 13.sp, color = BlueUEB)
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))

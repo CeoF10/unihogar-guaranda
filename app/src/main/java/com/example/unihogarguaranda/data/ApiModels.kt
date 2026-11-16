@@ -33,7 +33,8 @@ data class InmuebleResponse(
     val propietario: String? = null,
     val actualizado: String? = null,
     val reglas: String? = null,
-    val demostracion: Boolean = false
+    val demostracion: Boolean = false,
+    val modelo3d: com.example.unihogarguaranda.model.Modelo3D? = null
 )
 
 data class NuevoInmuebleRequest(

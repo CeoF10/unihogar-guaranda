@@ -42,6 +42,7 @@ private val TIPOS_FOTO = setOf("image/jpeg", "image/png", "image/webp")
 
 /**
  * RF03 y RF04: el propietario ve solo sus anuncios, los edita, sube fotos y publica.
+ * RF14: también sube el panorama 360° y describe la habitación para el modelo 3D.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,6 +55,7 @@ fun MisPublicacionesScreen(onBack: () -> Unit) {
     var gestionFotosId by rememberSaveable { mutableStateOf<Long?>(null) }
     var idParaFotos by rememberSaveable { mutableStateOf<Long?>(null) }
     var idParaPanorama by rememberSaveable { mutableStateOf<Long?>(null) }
+    var idModelo3D by rememberSaveable { mutableStateOf<Long?>(null) }
 
     suspend fun recargar() {
         val auth = Session.bearer(context) ?: return
@@ -174,6 +176,9 @@ fun MisPublicacionesScreen(onBack: () -> Unit) {
                                 }
                             }) { Text("Quitar panorama") }
                         }
+                        OutlinedButton(onClick = { idModelo3D = anuncio.id }) {
+                            Text(if (anuncio.modelo3d == null) "Crear modelo 3D" else "Editar modelo 3D")
+                        }
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (anuncio.estado == "BORRADOR") {
@@ -266,6 +271,13 @@ fun MisPublicacionesScreen(onBack: () -> Unit) {
             },
             dismissButton = { TextButton(onClick = { gestionFotosId = null }) { Text("Cerrar") } }
         )
+    }
+
+    anuncios.firstOrNull { it.id == idModelo3D }?.let { anuncio ->
+        Modelo3DDialog(anuncio, onDismiss = { idModelo3D = null }, onChanged = {
+            Toast.makeText(context, "Modelo 3D actualizado", Toast.LENGTH_SHORT).show()
+            recargar()
+        })
     }
 
     editando?.let { anuncio ->

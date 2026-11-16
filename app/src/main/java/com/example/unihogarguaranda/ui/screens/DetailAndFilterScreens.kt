@@ -188,15 +188,15 @@ fun PropertyDetailScreen(
     onShare: ((Property) -> Unit)? = null
 ) {
     var showPanorama by rememberSaveable(property.id) { mutableStateOf(false) }
-    var showPhoto3D by rememberSaveable(property.id) { mutableStateOf(false) }
+    var showRoom3D by rememberSaveable(property.id) { mutableStateOf(false) }
     var showReport by rememberSaveable(property.id) { mutableStateOf(false) }
     var motivo by rememberSaveable(property.id) { mutableStateOf("") }
     val pagerState = rememberPagerState(pageCount = { property.fotoUrls.size })
     val galleryScroll = rememberScrollState()
-    val selectedPhoto = property.fotoUrls.getOrNull(pagerState.currentPage)
+    val modelo3d = property.modelo3d
     val panoramaUrl = property.panoramaUrl
-    if (showPhoto3D && selectedPhoto != null) {
-        Photo3DScreen(selectedPhoto, pagerState.currentPage + 1, onBack = { showPhoto3D = false })
+    if (showRoom3D && modelo3d != null) {
+        Room3DScreen(property.title, modelo3d, onBack = { showRoom3D = false })
         return
     }
     if (showPanorama && panoramaUrl != null) {
@@ -419,9 +419,9 @@ fun PropertyDetailScreen(
                     }
                 }
 
-                if (selectedPhoto != null) {
-                    OutlinedButton(onClick = { showPhoto3D = true }, modifier = Modifier.fillMaxWidth()) {
-                        Text("Ver foto en 3D")
+                if (modelo3d != null) {
+                    OutlinedButton(onClick = { showRoom3D = true }, modifier = Modifier.fillMaxWidth()) {
+                        Text("Explorar habitación en 3D")
                     }
                 }
                 if (panoramaUrl != null) {
@@ -431,7 +431,7 @@ fun PropertyDetailScreen(
                 }
 
                 if (property.demostracion) {
-                    Text("Anuncio ficticio · imágenes generadas", style = MaterialTheme.typography.labelLarge)
+                    Text("Anuncio ficticio · imágenes generadas · ubicación aproximada", style = MaterialTheme.typography.labelLarge)
                 }
                 property.propietario?.let { Text("Propietario: $it") }
                 if (property.estado == "DISPONIBLE") Text("Disponible", style = MaterialTheme.typography.labelLarge)

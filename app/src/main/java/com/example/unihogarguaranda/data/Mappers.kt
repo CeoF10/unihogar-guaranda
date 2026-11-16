@@ -27,5 +27,6 @@ fun InmuebleResponse.toProperty(isFavorite: Boolean = false) = Property(
     actualizado = actualizado,
     estado = estado,
     reglas = reglas,
-    demostracion = demostracion
+    demostracion = demostracion,
+    modelo3d = modelo3d
 )

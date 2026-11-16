@@ -43,6 +43,9 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField(
+            "String", "ADMIN_PANEL_URL", "\"https://unihogar-admin.onrender.com/\""
+        )
     }
 
     buildTypes {
@@ -50,6 +53,9 @@ android {
             // Desarrollo: API local (adb reverse / emulador). Se instala junto a la versión de Play.
             applicationIdSuffix = ".debug"
             buildConfigField("String", "API_BASE_URL", "\"${localProps.getProperty("API_BASE_URL", "http://10.0.2.2:3000/api/")}\"")
+            localProps.getProperty("ADMIN_PANEL_URL")?.let { panel ->
+                buildConfigField("String", "ADMIN_PANEL_URL", "\"$panel\"")
+            }
         }
         release {
             // Producción: API publicada con HTTPS

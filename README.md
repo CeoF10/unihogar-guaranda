@@ -9,7 +9,7 @@ App Android para consultar y publicar arriendos estudiantiles cerca de los campu
 | Perfil | Pantallas disponibles |
 |---|---|
 | Estudiante | Catálogo, detalle de inmuebles, mapa, favoritos, comparación de hasta tres viviendas, visitas, reportes, mensajes y perfil |
-| Propietario | Anuncios propios, fotos y panorama 360°, solicitudes de visita, expediente, mensajes y perfil |
+| Propietario | Anuncios propios, fotos, panorama 360° y modelo 3D, solicitudes de visita, expediente, mensajes y perfil |
 
 La app usa Kotlin, Jetpack Compose y Material 3. Consume la API REST de UniHogar con Retrofit, carga imágenes con Coil y muestra mapas con osmdroid. Los servicios de ubicación se integran mediante Google Play Services.
 
@@ -17,6 +17,13 @@ En **Mis publicaciones**, el propietario puede subir un JPEG equirectangular 2:1
 En la ficha, el estudiante toca **Ver recorrido 360°**, arrastra para mirar alrededor y usa los botones de zoom.
 La ficha incluye su galería y su ubicación aunque el inmueble carezca de panorama.
 Para cargar las imágenes ficticias de prueba, ejecuta `npm run demo:fotos` en la API y abre el anuncio #1.
+En **Mis publicaciones → Crear modelo 3D**, el propietario indica las medidas del cuarto, el piso, el color de
+las paredes, la posición de la ventana y los muebles. Puede revisar la vista previa antes de guardar.
+La ficha muestra **Explorar habitación en 3D** cuando el anuncio tiene modelo. El teléfono dibuja el cuarto y
+acomoda los muebles junto a las paredes. Si un mueble no cabe con esas medidas, el visor lo indica.
+El estudiante gira la cámara con un dedo, acerca con dos y puede entrar al cuarto. Los anuncios ficticios
+#1, #5 y #7 traen modelos basados en sus fotos.
+El botón **Panel administrativo** de la pantalla de acceso solo aparece en la versión de depuración.
 
 ## Ejecutar en Android Studio
 

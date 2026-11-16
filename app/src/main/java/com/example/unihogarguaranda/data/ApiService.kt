@@ -104,6 +104,17 @@ interface ApiService {
         @Query("tipo") tipo: String? = null
     ): Response<FotosResponse>
 
+    // RF14: modelo 3D ilustrativo
+    @PUT("inmuebles/{id}/modelo-3d")
+    suspend fun guardarModelo3D(
+        @Header("Authorization") auth: String,
+        @Path("id") id: Long,
+        @Body body: com.example.unihogarguaranda.model.Modelo3D
+    ): Response<MensajeResponse>
+
+    @DELETE("inmuebles/{id}/modelo-3d")
+    suspend fun quitarModelo3D(@Header("Authorization") auth: String, @Path("id") id: Long): Response<MensajeResponse>
+
     @DELETE("fotos/{fotoId}")
     suspend fun borrarFoto(@Header("Authorization") auth: String, @Path("fotoId") fotoId: Long): Response<Unit>
 

@@ -36,8 +36,8 @@ import org.osmdroid.views.overlay.Marker
 // Centro de Guaranda (Plaza Roja) y campus de la UEB (Alpachaca)
 private val GUARANDA_CENTER = GeoPoint(-1.5921, -79.0035)
 private val CAMPUS_UEB = listOf(
-    "Campus Matriz Alpachaca" to GeoPoint(-1.591234, -79.004567),
-    "Campus Laguacoto" to GeoPoint(-1.602345, -78.995432)
+    "Campus Matriz · Alpachaca" to GeoPoint(-1.5696874, -79.0036103),
+    "Campus Laguacoto" to GeoPoint(-1.61153, -78.99744)
 )
 
 @Composable

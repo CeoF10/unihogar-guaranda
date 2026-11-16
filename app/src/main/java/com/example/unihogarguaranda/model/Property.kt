@@ -25,7 +25,8 @@ data class Property(
     val actualizado: String? = null,
     val estado: String? = null,
     val reglas: String? = null,
-    val demostracion: Boolean = false
+    val demostracion: Boolean = false,
+    val modelo3d: Modelo3D? = null
 )
 
 object MockData {
