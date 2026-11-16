@@ -14,8 +14,9 @@ data class Property(
     val description: String,
     val isFeatured: Boolean = false,
     var isFavorite: Boolean = false,
-    val lat: Double = -1.591234,
-    val lng: Double = -79.004567,
+    // Campus Matriz (Alpachaca), igual que CAMPUS_MATRIZ en unihogar-api/src/geo.js
+    val lat: Double = -1.5696874,
+    val lng: Double = -79.0036103,
     val photoCount: Int = 3,
     val fotoUrls: List<String> = emptyList(),
     val contact: String? = null,

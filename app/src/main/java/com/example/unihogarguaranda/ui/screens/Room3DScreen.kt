@@ -51,12 +51,19 @@ internal fun Room3DScreen(titulo: String, modelo: Modelo3D, onBack: () -> Unit) 
                     settings.allowFileAccess = false
                     settings.allowContentAccess = false
                     settings.blockNetworkLoads = true
+                    tag = url
                     loadUrl(url)
                 }
             },
             modifier = Modifier.fillMaxSize().padding(padding),
             onRelease = { it.destroy() },
-            update = { if (it.url != url) it.loadUrl(url) }
+            // WebView puede normalizar la URL; se compara con la última que se cargó.
+            update = {
+                if (it.tag != url) {
+                    it.tag = url
+                    it.loadUrl(url)
+                }
+            }
         )
     }
 }
