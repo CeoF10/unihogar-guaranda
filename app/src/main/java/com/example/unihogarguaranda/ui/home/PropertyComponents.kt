@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.ui.home
 
+import androidx.core.net.toUri
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -224,10 +225,10 @@ fun contactarPropietario(context: Context, property: Property) {
     // Números de Ecuador: 09XXXXXXXX -> 5939XXXXXXXX
     val internacional = if (telefono.startsWith("0")) "593" + telefono.drop(1) else telefono
     val mensaje = Uri.encode("Hola, vi su anuncio \"${property.title}\" en UniHogar Guaranda (#${property.id}). ¿Sigue disponible?")
-    val whatsapp = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$internacional?text=$mensaje"))
+    val whatsapp = Intent(Intent.ACTION_VIEW, "https://wa.me/$internacional?text=$mensaje".toUri())
     try {
         context.startActivity(whatsapp)
     } catch (e: android.content.ActivityNotFoundException) {
-        context.startActivity(Intent(Intent.ACTION_DIAL, Uri.parse("tel:$telefono")))
+        context.startActivity(Intent(Intent.ACTION_DIAL, "tel:$telefono".toUri()))
     }
 }

@@ -67,14 +67,14 @@ fun RegisterPropertyWizardScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var step by rememberSaveable { mutableStateOf(1) }
+    var step by rememberSaveable { mutableIntStateOf(1) }
     var error by rememberSaveable { mutableStateOf<String?>(null) }
 
     // Paso 1
     var titulo by rememberSaveable { mutableStateOf("") }
     var tipo by rememberSaveable { mutableStateOf("Habitación") }
     var direccion by rememberSaveable { mutableStateOf("") }
-    var dormitorios by rememberSaveable { mutableStateOf(1) }
+    var dormitorios by rememberSaveable { mutableIntStateOf(1) }
     var descripcion by rememberSaveable { mutableStateOf("") }
 
     // Paso 2
@@ -524,7 +524,7 @@ private fun Campo(
     onChange: (String) -> Unit,
     etiqueta: String,
     ejemplo: String,
-    modifier: Modifier = Modifier.fillMaxWidth(),
+    modifier: Modifier = Modifier,
     teclado: KeyboardType = KeyboardType.Text,
     icono: ImageVector? = null,
     prefijo: String? = null
@@ -538,7 +538,7 @@ private fun Campo(
         prefix = prefijo?.let { { Text(it) } },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = teclado),
-        modifier = modifier,
+        modifier = Modifier.fillMaxWidth().then(modifier),
         shape = RoundedCornerShape(14.dp),
         colors = coloresCampo()
     )

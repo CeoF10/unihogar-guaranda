@@ -4,6 +4,7 @@
     por Wi-Fi (IP de la PC, http) o por un túnel/servidor HTTPS. Como la IP de la PC cambia
     según la red, se permite http; con un servidor HTTPS el tráfico va cifrado.
 -->
-<network-security-config>
-    <base-config cleartextTrafficPermitted="true" />
+<network-security-config xmlns:tools="http://schemas.android.com/tools">
+    <!-- Solo en depuración: la versión release no incluye este archivo y exige HTTPS. -->
+    <base-config cleartextTrafficPermitted="true" tools:ignore="InsecureBaseConfiguration" />
 </network-security-config>

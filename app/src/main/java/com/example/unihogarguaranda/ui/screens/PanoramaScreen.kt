@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.ui.screens
 
+import android.annotation.SuppressLint
 import android.view.ViewGroup.LayoutParams
 import android.webkit.WebView
 import androidx.activity.compose.BackHandler
@@ -21,6 +22,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import org.json.JSONObject
 
+// JavaScript solo ejecuta el visor propio (assets/panorama.html); no hay puentes con Kotlin ni acceso a archivos.
+@SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun PanoramaScreen(url: String, onBack: () -> Unit) {

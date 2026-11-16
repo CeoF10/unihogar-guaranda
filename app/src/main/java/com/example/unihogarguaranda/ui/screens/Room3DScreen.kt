@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.ui.screens
 
+import android.annotation.SuppressLint
 import android.net.Uri
 import android.view.ViewGroup.LayoutParams
 import android.webkit.WebView
@@ -26,6 +27,8 @@ internal fun urlModelo3D(modelo: Modelo3D): String =
     "file:///android_asset/room-3d.html#" + Uri.encode(Gson().toJson(modelo))
 
 /** RF14: habitación ilustrativa a partir de las medidas y muebles que declaró el propietario. */
+// JavaScript solo ejecuta el visor propio de assets; la red y los archivos del teléfono quedan bloqueados.
+@SuppressLint("SetJavaScriptEnabled")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun Room3DScreen(titulo: String, modelo: Modelo3D, onBack: () -> Unit) {

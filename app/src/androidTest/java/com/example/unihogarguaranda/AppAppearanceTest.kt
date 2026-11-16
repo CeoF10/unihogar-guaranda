@@ -8,7 +8,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
-import com.example.unihogarguaranda.model.MockData
+import com.example.unihogarguaranda.model.Property
 import com.example.unihogarguaranda.ui.home.StudentCatalogContent
 import com.example.unihogarguaranda.ui.login.WelcomeScreen
 import com.example.unihogarguaranda.ui.theme.UniHogarGuarandaTheme
@@ -45,7 +45,13 @@ class AppAppearanceTest {
             UniHogarGuarandaTheme {
                 StudentCatalogContent(
                     paddingValues = PaddingValues(top = 32.dp),
-                    properties = listOf(MockData.initialProperties.first().copy(isFavorite = false, price = 150.75)),
+                    properties = listOf(
+                        Property(
+                            id = 1, title = "Habitación amoblada", type = "Habitación", location = "Cerca de la UEB · Guaranda",
+                            campusDistance = "0.3 km", price = 150.75, deposit = 100.0, beds = 1,
+                            services = listOf("WiFi", "Agua", "Luz"), description = "Habitación de ejemplo"
+                        )
+                    ),
                     searchText = "", onSearchChange = {},
                     selectedType = category,
                     onSelectType = { category = it; selected = it },

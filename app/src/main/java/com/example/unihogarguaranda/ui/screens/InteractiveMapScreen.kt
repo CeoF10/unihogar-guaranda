@@ -248,7 +248,7 @@ fun InteractiveMapScreen(
                                 color = TextPrimary
                             )
                             Text(
-                                text = "${prop.beds} hab. · ${prop.baths}",
+                                text = "${prop.beds} hab.",
                                 fontSize = 12.sp,
                                 color = BlueUEB
                             )

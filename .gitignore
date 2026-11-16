@@ -1,12 +1,4 @@
-*.class
-*.log
-*.ctxt
-.mtj.tmp/
-
 # Android / Gradle
-*.apk
-*.ap_
-*.dex
 .gradle/
 build/
 local.properties
@@ -15,21 +7,18 @@ local.properties
 captures/
 .externalNativeBuild/
 .cxx/
-
-# Spring Boot / JVM
-target/
-bin/
-*.jar
-!gradle/wrapper/gradle-wrapper.jar
-*.war
-*.ear
-
-# OS
-.DS_Store
-Thumbs.db
-database/
+.kotlin/
+*.apk
+*.aab
+*.ap_
+*.dex
+*.log
 
 # Firma de Google Play (nunca subir)
 keystore.properties
 *.jks
 *.keystore
+
+# Sistema
+.DS_Store
+Thumbs.db

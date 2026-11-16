@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.ui.home
 
+import androidx.core.net.toUri
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -71,7 +72,7 @@ fun StudentHomeScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showFilterSheet by rememberSaveable { mutableStateOf(false) }
     var selectedPropertyDetail by remember { mutableStateOf<Property?>(null) }
     // Al girar se pierde el objeto, pero se guarda el id para volver a abrir el mismo detalle
@@ -210,7 +211,7 @@ fun StudentHomeScreen(
             },
             onNavigate = { prop ->
                 val destino = Uri.encode("${prop.lat},${prop.lng}")
-                val ruta = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$destino")
+                val ruta = "https://www.google.com/maps/dir/?api=1&destination=$destino".toUri()
                 try {
                     context.startActivity(Intent(Intent.ACTION_VIEW, ruta))
                 } catch (_: android.content.ActivityNotFoundException) {

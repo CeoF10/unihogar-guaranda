@@ -480,19 +480,6 @@ fun PropertyDetailScreen(
                     )
                     AssistChip(
                         onClick = { },
-                        label = { Text(property.baths, fontSize = 12.sp) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Bathtub,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = BlueUEB
-                            )
-                        },
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    AssistChip(
-                        onClick = { },
                         label = { Text(property.type, fontSize = 12.sp) },
                         leadingIcon = {
                             Icon(

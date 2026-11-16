@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.data
 
+import androidx.core.content.edit
 import android.content.Context
 import com.example.unihogarguaranda.BuildConfig
 import com.google.gson.Gson
@@ -71,9 +72,9 @@ object ApiClient {
     }
 
     fun guardarServidor(url: String?) {
-        appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().apply {
+        appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
             if (url == null) remove(KEY_URL) else putString(KEY_URL, url)
-        }.apply()
+        }
     }
 
     val service: ApiService

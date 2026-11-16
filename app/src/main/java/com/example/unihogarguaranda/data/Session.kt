@@ -1,5 +1,6 @@
 package com.example.unihogarguaranda.data
 
+import androidx.core.content.edit
 import android.content.Context
 
 /**
@@ -15,12 +16,12 @@ object Session {
     private const val KEY_ACTIVE_ROLE = "active_role"
 
     fun save(context: Context, token: String, user: ApiUser) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-            .putString(KEY_TOKEN, token)
-            .putString(KEY_EMAIL, user.email)
-            .putString(KEY_NAME, user.nombre)
-            .putStringSet(KEY_ROLES, user.roles.toSet())
-            .apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
+            putString(KEY_TOKEN, token)
+            putString(KEY_EMAIL, user.email)
+            putString(KEY_NAME, user.nombre)
+            putStringSet(KEY_ROLES, user.roles.toSet())
+        }
     }
 
     fun token(context: Context): String? =
@@ -39,7 +40,7 @@ object Session {
 
     /** Rol con el que se inició sesión (un usuario puede tener ambos roles). */
     fun saveActiveRole(context: Context, role: String) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_ACTIVE_ROLE, role).apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putString(KEY_ACTIVE_ROLE, role) }
     }
 
     fun activeRole(context: Context): String? =
@@ -59,6 +60,6 @@ object Session {
     }
 
     fun clear(context: Context) {
-        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().clear().apply()
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { clear() }
     }
 }

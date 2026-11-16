@@ -1,8 +1,8 @@
 package com.example.unihogarguaranda.ui.login
 
+import androidx.core.net.toUri
 import android.content.ActivityNotFoundException
 import android.content.Intent
-import android.net.Uri
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -548,7 +548,7 @@ fun LoginScreen(
             if (BuildConfig.DEBUG && !uiState.isRegisterMode) {
                 TextButton(onClick = {
                     try {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(BuildConfig.ADMIN_PANEL_URL)))
+                        context.startActivity(Intent(Intent.ACTION_VIEW, BuildConfig.ADMIN_PANEL_URL.toUri()))
                     } catch (_: ActivityNotFoundException) {
                         Toast.makeText(context, "No hay un navegador para abrir el panel", Toast.LENGTH_SHORT).show()
                     }

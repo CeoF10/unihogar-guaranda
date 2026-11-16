@@ -40,7 +40,7 @@ fun OwnerHomeScreen(
     onLogout: () -> Unit
 ) {
     val context = LocalContext.current
-    var selectedTab by rememberSaveable { mutableStateOf(0) }
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var showRegisterWizard by rememberSaveable { mutableStateOf(false) }
     var showMisPublicaciones by rememberSaveable { mutableStateOf(false) }
     var showMiExpediente by rememberSaveable { mutableStateOf(false) }
